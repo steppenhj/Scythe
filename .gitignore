@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# MuJoCo / 시뮬레이션 산출물
+*.mp4
+*.png.tmp
+mjkey.txt
+/out/
+/logs/
+
+# 에디터 · OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
