@@ -16,7 +16,7 @@ import mujoco
 import mujoco.viewer
 
 # ────────── 이 두 숫자만 바꿔가며 실험한다 ──────────
-SLOPE_DEG = 35.0   # 경사각 (도)
+SLOPE_DEG = 29.0   # 경사각 (도)
 FRICTION = 0.6     # 마찰계수 (0=얼음, 1=고무)
 # ──────────────────────────────────────────────────
 
@@ -27,14 +27,15 @@ XML = f"""
   <asset>
     <texture name="grid" type="2d" builtin="checker"
              rgb1=".2 .3 .4" rgb2=".3 .4 .5" width="300" height="300"/>
-    <material name="grid" texture="grid" texrepeat="8 8"/>
+    <material name="grid" texture="grid" texrepeat="160 160"/>
   </asset>
 
   <worldbody>
     <light pos="0 0 3" dir="0 0 -1"/>
 
-    <!-- 경사면: euler의 두 번째 값이 Y축 기준 기울기(도) -->
-    <geom name="slope" type="plane" size="5 5 .1"
+    <!-- 경사면: euler의 두 번째 값이 Y축 기준 기울기(도).
+         size는 '그려주는 범위'일 뿐, 충돌 계산상 plane은 무한히 넓다 -->
+    <geom name="slope" type="plane" size="100 100 .1"
           euler="0 {SLOPE_DEG} 0"
           friction="{FRICTION} .005 .0001" material="grid"/>
 
@@ -43,6 +44,11 @@ XML = f"""
       <freejoint/>
       <geom type="box" size=".15 .15 .15" mass="5"
             friction="{FRICTION} .005 .0001" rgba=".8 .3 .2 1"/>
+      <!-- 상자를 따라다니는 카메라. 없으면 상자가 화면 밖으로 사라진다 -->
+      <camera name="track" mode="trackcom"
+              pos="0 -4 2" xyaxes="1 0 0  0 0.447 0.894"/>
+      <!-- 조명도 같이 따라가야 한다. 고정이면 멀어질수록 어두워진다 -->
+      <light mode="trackcom" pos="0 0 4" dir="0 0 -1" diffuse=".8 .8 .8"/>
     </body>
   </worldbody>
 </mujoco>
@@ -56,6 +62,12 @@ print(f"이론상 미끄러지기 시작하는 각도: {math.degrees(math.atan(F
 print("창을 닫으면 끝납니다.\n")
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
+    # 위에서 만든 track 카메라를 시작 시점부터 쓴다.
+    # (그냥 두면 원점 고정 카메라라, 상자가 나가면 빈 화면만 남는다)
+    viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FIXED
+    viewer.cam.fixedcamid = mujoco.mj_name2id(
+        model, mujoco.mjtObj.mjOBJ_CAMERA, "track")
+
     start = time.time()
     while viewer.is_running():
         mujoco.mj_step(model, data)   # 물리 한 스텝 전진 (기본 2ms)
