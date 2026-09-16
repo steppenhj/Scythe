@@ -1,5 +1,8 @@
 """Phase 1 입구: 산소 지형 위에서 로봇을 몬다.
 
+지형 좌표계: 원점은 전체 땅 ∪ 예초 구역의 도심, +x 동쪽, +y 북쪽 (m).
+내리막은 동남동(방위각 120°), 4.6도.
+
 지형은 terrain.py 에서 재료로 가져오고(뷰어는 안 뜬다), 차체와 조종은
 robot.py 와 같다. robot.py(평지)가 대조군, 이 파일(지형)이 실험군 —
 둘의 차이는 오직 '땅'뿐이어야 비교가 성립한다.
@@ -22,6 +25,7 @@ import mujoco
 import mujoco.viewer
 
 import terrain   # 산소 지형 재료: XML 조각들, 높이 함수 surf(), 격자 Z
+                # (지형 숫자의 출처는 terrain_data.py ← trace.py ← photos/)
 
 # ────── 차체: robot.py 와 같은 가설 (A안 35 kg) ──────
 BODY_L = 0.80
@@ -35,7 +39,7 @@ MAX_V = 1.0
 STEP_V = 0.25
 STEER_V = 0.5
 STEER_TAU = 0.6
-START = (16.0, 14.0)   # 출발 지점: 예초 구역 남동쪽의 트인 평지
+START = (12.0, 1.8)    # 예초 구역 안, 경계에서 7.7 m·봉분에서 8.0 m 떨어진 트인 자리
 # ──────────────────────────────────────────────────────
 
 START_Z = terrain.surf(*START) + TRACK_H / 2 + 0.05
@@ -61,10 +65,6 @@ XML = f"""
     {terrain.SANGSEOK}
     {terrain.TREE_GEOMS}
     {terrain.STAKES}
-
-    <!-- 사진 1의 검은 표석 -->
-    <geom type="box" size=".3 .08 .28" rgba=".13 .13 .15 1"
-          pos="0.0 14.0 {terrain.surf(0.0, 14.0) + 0.28:.3f}"/>
 
     <body name="robot" pos="{START[0]} {START[1]} {START_Z:.3f}">
       <freejoint/>

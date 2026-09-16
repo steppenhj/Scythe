@@ -1,161 +1,136 @@
-"""청도 산소를 모방한 지형 — 구글어스 실측 경계 반영.
+"""청도 산소 지형 — 사진에서 뽑은 숫자로 세운 높이함수.
 
-핵심 아이디어 둘:
-  1. 지형은 '높이 함수' z(x,y)다. 기울어진 바탕 + 단차 + 봉분 + 경계 둔덕을
-     각각 수식으로 만들어 전부 더한다.
-  2. 땅의 실제 모양은 '다각형'이다. 구글어스 캡처에서 노란 꼭짓점의 픽셀
-     좌표를 그대로 따고, 실측 면적(전체 1,242 ㎡)으로 축척을 보정한다.
-     다각형 밖(이웃 밭)은 둔덕으로 한 단 낮다 → 위에서 보면 실제 모양의
-     대지가 도드라진다.
+좌표는 terrain_data.py 에서 온다(trace.py 가 사진에서 추출). 이 파일은
+그 점·수치를 '땅'으로 바꾸는 일만 한다. 숫자를 여기서 고치지 않는다.
 
-배치 (화면 위=북=-x=높은 쪽 가정. 내리막 방향이 반대로 확인되면 TILT_DEG 부호만 뒤집는다):
+높이 = 기울어진 바탕 + 봉분들 − 경계 밖 둔덕
 
-   [서쪽: 숲 군락(예초 대상 아님)]  [동쪽: 예초 구역 — 봉분 9기, 단차 2]
-   예초 구역 꼭짓점마다 흰 말뚝. 경계 밖은 이웃 밭.
+바탕 기울기는 이제 가정이 아니다. 전체 땅(중앙 219.26 m)과 예초 구역
+(중앙 217.82 m)의 도심이 17.8 m 떨어져 있고 1.44 m 차이가 나므로,
+내리막은 방위각 120°(동남동), 기울기 4.6도로 역산된다.
+
+예전에 있던 '단차 2개'는 뺐다. 사진에 근거가 없었고, 예초 구역 고저차가
+1.66 m 뿐이라 0.5 m 단차 둘이 들어갈 자리가 아니다. 로봇을 세울 단차
+기하학은 봉분(지름 2.2 m)이 만든다 — 그게 이 땅의 진짜 요철이다.
 
 실행:  .venv/bin/python terrain.py
 마우스 왼쪽 드래그로 시점 회전, 휠로 확대.
 """
 import math
 import os
-import time
 
-# WSLg + Mesa 21.2 조합에서 하드웨어 GL이 조용히 실패한다 → CPU 렌더링 (slope.py 와 동일)
+# WSLg + Mesa 21.2: 하드웨어 GL이 조용히 실패한다 → CPU 렌더링
 os.environ.setdefault("LIBGL_ALWAYS_SOFTWARE", "1")
 
 import numpy as np
-import mujoco
-import mujoco.viewer
 
-# ────── 구글어스 실측 (2026-09-15 캡처) ──────
-# 캡처 화면에서 딴 꼭짓점 픽셀 좌표 (가로px, 세로px).
-# 새 캡처로 갱신할 땐 이 두 목록과 면적 두 개만 바꾸면 된다.
-LAND_PX = [(228, 388), (162, 452), (310, 545), (355, 600), (480, 535), (522, 632),
-           (526, 700), (514, 772), (452, 850), (405, 895), (290, 808), (215, 798),
-           (140, 785), (52, 745), (18, 604), (95, 517)]
-MOW_PX = [(470, 542), (522, 632), (526, 700), (514, 772), (452, 850), (405, 893),
-          (350, 846), (312, 786), (302, 720), (315, 650), (345, 595), (395, 560)]
-AREA_LAND = 1242.13   # 전체 땅 (㎡) — 축척 보정 기준
-AREA_MOW = 547.36     # 예초 구역 (㎡) — 손 트레이싱 오차 보정 기준
+import terrain_data as D
 
-# ────── 실측으로 교체할 높이들 (m, 도) — 아직 추정 ──────
-TILT_DEG = 3.0        # 전체 기울기 (구글 고도: 전체 고저차 ~3.7 m 에서 역산)
+# ────── [추정] 사진으로 못 재는 값. 현장 실측으로 교체할 것 ──────
 BANK_H = 1.2          # 경계 밖(이웃 밭)으로 내려가는 둔덕 높이
-STEPS = [             # 예초 구역 안 단차: (위치 x, 내려가는 높이, 모서리 폭)
-    ( 2.0, 0.5, 0.3),
-    (12.0, 0.5, 0.3),
-]
-MOUNDS = [            # 봉분: (x, y, 높이, 반지름) — 위성 배치대로 두 군집
-    ( 5.0,  7.5, 0.9, 1.4), ( 5.5, 11.0, 0.8, 1.3), ( 9.0,  6.5, 0.8, 1.3),
-    ( 9.5, 10.0, 0.8, 1.3), ( 9.0, 13.5, 0.7, 1.2),
-    (14.0,  7.0, 0.8, 1.3), (14.5, 10.5, 0.7, 1.2), (18.0,  8.0, 0.7, 1.2),
-    (18.5, 11.5, 0.7, 1.2),
-]
-TREES = [             # 나무: (x, y, 줄기 반지름, 수관 반지름)
-    # 서쪽 숲 군락 — 위성의 짙은 녹색 덩어리
-    (-12.0, -15.0, 0.22, 2.8), ( -8.0, -18.0, 0.20, 2.6), ( -4.0, -12.0, 0.18, 2.4),
-    (-10.0,  -8.0, 0.19, 2.5), ( -2.0, -18.0, 0.17, 2.3), (  3.0, -14.0, 0.16, 2.2),
-    (-15.0, -11.0, 0.18, 2.4), (  1.0,  -7.0, 0.15, 2.0),
-    # 예초 구역 안팎의 흩어진 과수 (사진 1)
-    ( -1.0,  10.0, 0.15, 2.0), ( -3.0,  17.0, 0.14, 1.9), ( 13.0,  20.0, 0.13, 1.8),
-]
-# ──────────────────────────────────────────────
+BANK_W = 0.8          # 둔덕이 내려가는 데 걸리는 거리 — 여기가 로봇이 떨어지는 턱
+FRICTION = 0.6        # 마른 흙 + 마른 풀
+BIG_TREE = 3.5        # 이보다 큰 수관 덩어리는 나무 한 그루가 아니라 숲 덩어리
+# ────────────────────────────────────────────────────────────
+
+RES = 0.2             # 높이 격자 간격 (m)
+MARGIN = 7.0          # 경계 밖으로 더 그릴 여유
 
 
-def _shoelace(pts):
-    """다각형 면적 (신발끈 공식)."""
-    p = np.asarray(pts, float)
-    x, y = p[:, 0], p[:, 1]
-    return 0.5 * abs(float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)))
-
-
-# 픽셀 → 미터: 화면 아래(남)=+x, 오른쪽(동)=+y. 축척은 전체 땅 면적으로 보정
-_scale = math.sqrt(AREA_LAND / _shoelace(LAND_PX))
-_center = np.asarray(LAND_PX, float).mean(axis=0)
-def _to_m(pts):
-    p = np.asarray(pts, float)
-    return np.stack([(p[:, 1] - _center[1]) * _scale,
-                     (p[:, 0] - _center[0]) * _scale], axis=1)
-
-LAND = _to_m(LAND_PX)
-MOW = _to_m(MOW_PX)
-_shift = (LAND.min(axis=0) + LAND.max(axis=0)) / 2   # 좌표 원점 = 땅 한가운데
-LAND -= _shift
-MOW -= _shift
-# 손 트레이싱 면적 오차(~7%)를 실측 면적에 맞게 소폭 확대 보정
-MOW = MOW.mean(axis=0) + (MOW - MOW.mean(axis=0)) * math.sqrt(AREA_MOW / _shoelace(MOW))
-
-
-def smooth_step(u, w):
-    """0→1 로 부드럽게 올라가는 계단. w 가 클수록 모서리가 둥글다(흙이니까)."""
-    t = np.clip(u / w, -30, 30)          # exp 오버플로 방지
-    return 1.0 / (1.0 + np.exp(-t))
-
-
-def inside_dist(x, y, poly):
-    """다각형 경계까지의 부호 있는 거리: 안이면 +, 밖이면 -."""
+def _poly_dist(x, y, poly):
+    """다각형 안이면 +, 밖이면 − 로 경계까지의 거리."""
     x, y = np.asarray(x, float), np.asarray(y, float)
-    inside = np.zeros(np.broadcast(x, y).shape, bool)
-    dist = np.full(np.broadcast(x, y).shape, np.inf)
-    n = len(poly)
-    for i in range(n):
-        (x1, y1), (x2, y2) = poly[i], poly[(i + 1) % n]
-        # 안/밖: 반직선 교차 횟수의 홀짝 (ray casting)
+    inside = np.zeros(np.shape(x), bool)
+    dist = np.full(np.shape(x), np.inf)
+    for i in range(len(poly)):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % len(poly)]
         cross = (y1 > y) != (y2 > y)
-        x_hit = (x2 - x1) * (y - y1) / (y2 - y1) + x1
+        with np.errstate(divide="ignore", invalid="ignore"):
+            x_hit = (x2 - x1) * (y - y1) / (y2 - y1) + x1
         inside ^= cross & (x < x_hit)
-        # 경계까지 거리: 각 변(선분)까지 최단거리의 최솟값
         dx, dy = x2 - x1, y2 - y1
         t = np.clip(((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy), 0, 1)
         dist = np.minimum(dist, np.hypot(x - x1 - t * dx, y - y1 - t * dy))
     return np.where(inside, dist, -dist)
 
 
+def _smooth_step(u, w):
+    """0 에서 1 로 부드럽게 넘어가는 계단 (폭 w)."""
+    t = np.clip(u / w, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
 def height(x, y):
-    """묘역의 높이 = 바탕 + 단차들 + 봉분들 + 경계 둔덕의 합."""
-    z = -math.tan(math.radians(TILT_DEG)) * np.asarray(x, float)  # ① 기울어진 바탕
-    for sx, sh, sw in STEPS:                                      # ② 단차
-        z = z - sh * smooth_step(x - sx, sw)
-    for mx, my, mh, mr in MOUNDS:                                 # ③ 봉분: 평지에서 바로
-        r = np.hypot(x - mx, y - my)                              #    올라오는 둥근 돔
-        z = z + mh * (0.5 + 0.5 * np.cos(np.pi * np.minimum(r / mr, 1.0)))
-    d = inside_dist(x, y, LAND)                                   # ④ 경계 밖(이웃 밭)은
-    z = z - BANK_H * smooth_step(-d, 0.8)                         #    둔덕 아래로
-    return z
+    """지표면 높이. 사진에서 나온 것 + 추정한 둔덕."""
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    dn = np.asarray(D.DOWNHILL, float)
+    z = -D.GRADE * (x * dn[0] + y * dn[1])              # ① 기울어진 바탕
+    for mx, my in D.MOUNDS:                             # ② 봉분: 둥근 돔
+        r = np.hypot(x - mx, y - my)
+        z = z + D.MOUND_H * (0.5 + 0.5 * np.cos(np.pi * np.minimum(r / D.MOUND_R, 1.0)))
+    d = np.maximum(_poly_dist(x, y, D.LAND),            # ③ 두 구역의 합집합 밖은
+                   _poly_dist(x, y, D.MOW))             #    이웃 밭으로 한 단 아래
+    return z - BANK_H * _smooth_step(-d, BANK_W)
 
 
-# 높이 함수를 20 cm 격자로 샘플링 → MuJoCo heightfield 데이터
-RX, RY = 28.0, 28.0
-NCOL, NROW = 281, 281
+# 합집합을 다 담는 격자
+_ax = [p[0] for p in D.LAND + D.MOW]
+_ay = [p[1] for p in D.LAND + D.MOW]
+RX = max(abs(min(_ax)), abs(max(_ax))) + MARGIN
+RY = max(abs(min(_ay)), abs(max(_ay))) + MARGIN
+NCOL = int(2 * RX / RES) | 1
+NROW = int(2 * RY / RES) | 1
 X, Y = np.meshgrid(np.linspace(-RX, RX, NCOL), np.linspace(-RY, RY, NROW))
 Z = height(X, Y)
 ZMIN, ZMAX = float(Z.min()), float(Z.max() - Z.min())
 
 
 def surf(x, y):
-    """월드 좌표에서 지표면의 z (hfield 데이터는 0부터 시작하므로 ZMIN 을 뺀다)."""
+    """월드 좌표에서 지표면 z. hfield 데이터가 0 부터 시작하므로 ZMIN 을 뺀다."""
     return float(height(x, y)) - ZMIN
 
 
-# 봉분마다 상석 하나: 봉분 앞(내리막 쪽) 1 m
+def _inside_union(x, y):
+    return (_poly_dist(x, y, D.LAND) > 0) or (_poly_dist(x, y, D.MOW) > 0)
+
+
+# 검산: 모델이 만든 기복이 구글 고도와 같은 자릿수인가
+_in = (_poly_dist(X, Y, D.LAND) > 0) | (_poly_dist(X, Y, D.MOW) > 0)
+RELIEF = float(Z[_in].max() - Z[_in].min())
+
+# ────── 지형 위에 얹는 것들 ──────
+_dn = np.asarray(D.DOWNHILL, float)
+
+# 상석: 봉분 앞(내리막 쪽) 1.8 m. 내리막 방향을 알아서 이제 제대로 놓인다
 SANGSEOK = "\n    ".join(
     f'<geom type="box" size=".45 .3 .25" rgba=".6 .6 .62 1" '
-    f'pos="{mx + mr + 1.0:.2f} {my:.2f} {surf(mx + mr + 1.0, my) + 0.25:.3f}"/>'
-    for mx, my, mh, mr in MOUNDS)
+    f'pos="{mx + _dn[0]*1.8:.2f} {my + _dn[1]*1.8:.2f} '
+    f'{surf(mx + _dn[0]*1.8, my + _dn[1]*1.8) + 0.25:.3f}"/>'
+    for mx, my in D.MOUNDS)
 
-# 나무: 줄기(원기둥)는 부딪히는 장애물, 수관(공)은 충돌 없는 장식
-TREE_GEOMS = "\n    ".join(
-    f'<geom type="cylinder" size="{tr:.2f} 1.2" rgba=".45 .33 .22 1" '
-    f'pos="{tx:.1f} {ty:.1f} {surf(tx, ty) + 1.2:.3f}"/>\n    '
-    f'<geom type="sphere" size="{cr:.1f}" rgba=".25 .42 .20 1" contype="0" conaffinity="0" '
-    f'pos="{tx:.1f} {ty:.1f} {surf(tx, ty) + 2.4 + cr * 0.5:.3f}"/>'
-    for tx, ty, tr, cr in TREES)
+# 나무. 경계 안이면 줄기에 충돌이 있고(로봇이 피해야 한다), 밖이면 배경.
+# 수관이 큰 덩어리는 나무 한 그루가 아니라 숲이라 낮고 넓게 깐다.
+def _tree_xml(tx, ty, rad, obstacle):
+    z = surf(tx, ty)
+    if rad > BIG_TREE:      # 숲 덩어리: 충돌 없는 납작한 수관
+        return (f'<geom type="ellipsoid" size="{rad:.1f} {rad:.1f} 2.2" '
+                f'contype="0" conaffinity="0" rgba=".18 .30 .16 1" '
+                f'pos="{tx:.1f} {ty:.1f} {z + 2.2:.2f}"/>')
+    trunk_r = max(0.10, rad * 0.11)
+    col = "" if obstacle else ' contype="0" conaffinity="0"'
+    return (f'<geom type="cylinder" size="{trunk_r:.2f} 1.2"{col} rgba=".45 .33 .22 1" '
+            f'pos="{tx:.1f} {ty:.1f} {z + 1.2:.2f}"/>\n    '
+            f'<geom type="sphere" size="{rad:.2f}" contype="0" conaffinity="0" '
+            f'rgba=".25 .42 .20 1" pos="{tx:.1f} {ty:.1f} {z + 2.4 + rad*0.5:.2f}"/>')
 
-# 예초 구역 꼭짓점마다 흰 말뚝 (측량 말뚝처럼 경계 표시)
+TREE_GEOMS = "\n    ".join(_tree_xml(*t) for t in D.TREES)
+
+# 예초 구역 경계 말뚝 — 로봇이 넘으면 안 되는 선
 STAKES = "\n    ".join(
     f'<geom type="cylinder" size=".04 .25" rgba=".95 .95 .9 1" '
     f'pos="{px:.2f} {py:.2f} {surf(px, py) + 0.25:.3f}"/>'
-    for px, py in MOW)
+    for px, py in D.MOW)
 
 XML = f"""
 <mujoco>
@@ -173,52 +148,35 @@ XML = f"""
     <light directional="true" pos="0 0 20" dir="-.2 .2 -1" diffuse=".9 .9 .9"/>
 
     <geom type="hfield" hfield="myoyeok" material="grass"
-          friction="0.6 .005 .0001"/>
+          friction="{FRICTION} .005 .0001"/>
 
-    <!-- 상석들: 나중에 '진입 금지 구역'의 기준점이 된다 -->
     {SANGSEOK}
-
-    <!-- 나무들: 줄기는 로봇이 피해야 할 장애물 -->
     {TREE_GEOMS}
-
-    <!-- 예초 구역 경계 말뚝 -->
     {STAKES}
-
-    <!-- 사진 1의 검은 표석 -->
-    <geom type="box" size=".3 .08 .28" rgba=".13 .13 .15 1"
-          pos="0.0 14.0 {surf(0.0, 14.0) + 0.28:.3f}"/>
-
-    <!-- 크기 감각용 30cm 상자 (slope.py 의 그 상자) -->
-    <body pos="16.0 14.0 {surf(16.0, 14.0) + 0.5:.3f}">
-      <freejoint/>
-      <geom type="box" size=".15 .15 .15" mass="5"
-            friction="0.6 .005 .0001" rgba=".8 .3 .2 1"/>
-    </body>
   </worldbody>
 </mujoco>
 """
 
-# ── 아래는 이 파일을 '직접 실행'했을 때만 돈다.
-#    field.py 처럼 다른 실험이 위의 지형 재료(XML 조각, surf, Z)를
-#    import 로 가져다 쓸 때는 뷰어가 뜨지 않는다.
 if __name__ == "__main__":
+    import time
+    import mujoco
+    import mujoco.viewer
+
+    print(__doc__)
+    print(f"격자   {NCOL}×{NROW} @ {RES} m,  범위 ±{RX:.1f} × ±{RY:.1f} m")
+    print(f"봉분   {len(D.MOUNDS)}기, 지름 {2*D.MOUND_R:.1f} m, 높이 {D.MOUND_H} m [추정]")
+    print(f"나무   {len(D.TREES)}덩어리 (경계 안 장애물 {sum(1 for t in D.TREES if t[3])}개)")
+    print(f"내리막 방위각 {(math.degrees(math.atan2(*D.DOWNHILL))+360)%360:.0f}°, "
+          f"{math.degrees(math.atan(D.GRADE)):.1f}도")
+    print(f"검산   모델 기복 {RELIEF:.2f} m  vs  구글 고저차 {D.Z_RANGE:.2f} m "
+          f"(차이 {abs(RELIEF-D.Z_RANGE):.2f} m)")
+
     model = mujoco.MjModel.from_xml_string(XML)
-    model.hfield_data[:] = ((Z - ZMIN) / ZMAX).ravel()   # 격자 데이터를 0~1 로
+    model.hfield_data[:] = ((Z - ZMIN) / ZMAX).ravel()
     data = mujoco.MjData(model)
-
-    print(f"전체 땅 {_shoelace(LAND):.0f} ㎡ ({_shoelace(LAND)/3.3:.0f}평) / "
-          f"예초 구역 {_shoelace(MOW):.0f} ㎡ ({_shoelace(MOW)/3.3:.0f}평)")
-    print(f"기울기 {TILT_DEG:.0f}도 / 단차 {len(STEPS)}곳 / 경계 둔덕 {BANK_H} m / "
-          f"봉분 {len(MOUNDS)}기 / 나무 {len(TREES)}그루")
-    print("창을 닫으면 끝납니다.\n")
-
     with mujoco.viewer.launch_passive(model, data) as viewer:
-        # 예초 구역이 한눈에 보이는 비스듬한 시점에서 시작
-        viewer.cam.lookat[:] = [6.0, 8.0, surf(6.0, 8.0)]
-        viewer.cam.distance = 42
-        viewer.cam.azimuth = 150
+        viewer.cam.distance = 70
         viewer.cam.elevation = -35
-
         start = time.time()
         while viewer.is_running():
             mujoco.mj_step(model, data)
