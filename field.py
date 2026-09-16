@@ -12,6 +12,13 @@ robot.py 와 같다. robot.py(평지)가 대조군, 이 파일(지형)이 실험
   ←/A →/D 조향 — 놓으면 직진 복귀   스페이스/X 정지
   R 출발 지점으로 리셋 (뒤집히거나 둔덕 아래로 떨어졌을 때)
 
+화면이 느리면 (물리는 이미 실시간의 46배로 돌 수 있다 — 병목은 항상 렌더링이다):
+  1. 뷰어 왼쪽 Option 패널에서 **Vertical Sync 끄기** — 클릭 한 번, 파일 수정 불필요
+  2. SHADOW 를 0 으로 (그림자 끔). 입체감은 줄지만 가장 크게 빨라진다
+  3. RENDER_HZ 를 30, 20 으로
+  4. terrain.py 의 RES 를 0.3 으로 (삼각형 25만 → 11만).
+     단 물리 접촉도 이 격자를 쓴다 — 비교 실험 중에 바꾸면 대조군이 달라진다
+
 실행:  .venv/bin/python field.py
 """
 import math
@@ -41,6 +48,8 @@ STEER_V = 0.5
 STEER_TAU = 0.6
 RENDER_HZ = 50    # 화면 갱신 (Hz). WSLg CPU 렌더링이 버거우면 30, 20 으로 내린다.
                   # 물리는 이것과 무관하게 2 ms 마다 푼다 — 화면만 성기어진다
+SHADOW = 1024     # 그림자맵 한 변 (px). MuJoCo 기본 4096 은 CPU 렌더링에 과하다 —
+                  # 조명 하나당 16.8 M 화소를 프레임마다 따로 그린다. 0 이면 그림자 끔
 START = (12.0, 1.8)    # 예초 구역 안, 경계에서 7.7 m·봉분에서 8.0 m 떨어진 트인 자리
 # ──────────────────────────────────────────────────────
 
@@ -49,6 +58,13 @@ START_Z = terrain.surf(*START) + TRACK_H / 2 + 0.05
 XML = f"""
 <mujoco>
   <option gravity="0 0 -9.81" cone="elliptic"/>
+
+  <!-- CPU 렌더링(WSLg) 예산에 맞춘 화질. 물리에는 아무 영향이 없다.
+       offsamples 0: 오프스크린 멀티샘플 끔 (기본 4 = 화소당 4배 일)
+       numslices/numstacks: 구·원기둥 세분. 28x16 → 12x8 이면 수관 삼각형이 1/5 -->
+  <visual>
+    <quality shadowsize="{SHADOW}" offsamples="0" numslices="12" numstacks="8"/>
+  </visual>
 
   <asset>
     <hfield name="myoyeok" nrow="{terrain.NROW}" ncol="{terrain.NCOL}"
@@ -84,7 +100,9 @@ XML = f"""
             pos="0 {-(BODY_W + TRACK_W) / 2:.3f} 0" mass="{TRACK_M}"
             friction="{FRICTION} .005 .0001" surfacevel="0.0001 0 0"
             rgba=".15 .15 .15 1"/>
-      <light mode="trackcom" pos="0 0 4" dir="0 0 -1" diffuse=".8 .8 .8"/>
+      <!-- castshadow false: 그림자맵은 태양(위 directional) 것 하나면 된다 -->
+      <light mode="trackcom" pos="0 0 4" dir="0 0 -1" diffuse=".8 .8 .8"
+             castshadow="false"/>
     </body>
   </worldbody>
 </mujoco>

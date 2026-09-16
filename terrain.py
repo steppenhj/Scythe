@@ -135,6 +135,13 @@ XML = f"""
 <mujoco>
   <option gravity="0 0 -9.81"/>
 
+  <!-- CPU 렌더링(WSLg) 예산에 맞춘 화질. 물리에는 아무 영향이 없다.
+       offsamples 0: 오프스크린 멀티샘플 끔 (기본 4 = 화소당 4배 일)
+       numslices/numstacks: 구·원기둥 세분. 28x16 → 12x8 이면 수관 삼각형이 1/5 -->
+  <visual>
+    <quality shadowsize="1024" offsamples="0" numslices="12" numstacks="8"/>
+  </visual>
+
   <asset>
     <!-- size = (x반폭, y반폭, 높이 스케일, 바닥 두께). 데이터는 0~1 로 넣는다 -->
     <hfield name="myoyeok" nrow="{NROW}" ncol="{NCOL}" size="{RX} {RY} {ZMAX:.4f} 0.5"/>
