@@ -30,7 +30,6 @@ import terrain_data as D
 BANK_H = 1.2          # 경계 밖(이웃 밭)으로 내려가는 둔덕 높이
 BANK_W = 0.8          # 둔덕이 내려가는 데 걸리는 거리 — 여기가 로봇이 떨어지는 턱
 FRICTION = 0.6        # 마른 흙 + 마른 풀
-BIG_TREE = 3.5        # 이보다 큰 수관 덩어리는 나무 한 그루가 아니라 숲 덩어리
 # ────────────────────────────────────────────────────────────
 
 RES = 0.2             # 높이 격자 간격 (m). 화면이 버거우면 여기를 올린다 —
@@ -114,13 +113,9 @@ SANGSEOK = "\n    ".join(
     for mx, my in D.MOUNDS)
 
 # 나무. 경계 안이면 줄기에 충돌이 있고(로봇이 피해야 한다), 밖이면 배경.
-# 수관이 큰 덩어리는 나무 한 그루가 아니라 숲이라 낮고 넓게 깐다.
+# 숲 덩어리는 trace.py 가 이미 개별 나무로 쪼개서 준다 — 여기서는 한 그루씩만 그린다.
 def _tree_xml(tx, ty, rad, obstacle):
     z = surf(tx, ty)
-    if rad > BIG_TREE:      # 숲 덩어리: 충돌 없는 납작한 수관
-        return (f'<geom type="ellipsoid" size="{rad:.1f} {rad:.1f} 2.2" '
-                f'contype="0" conaffinity="0" rgba=".18 .30 .16 1" '
-                f'pos="{tx:.1f} {ty:.1f} {z + 2.2:.2f}"/>')
     trunk_r = max(0.10, rad * 0.11)
     col = "" if obstacle else ' contype="0" conaffinity="0"'
     return (f'<geom type="cylinder" size="{trunk_r:.2f} 1.2"{col} rgba=".45 .33 .22 1" '

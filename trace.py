@@ -37,6 +37,9 @@ MOUND_R = 1.1        # [추출] 확대 영상에서 잰 봉분 반지름 (m), �
 MOUND_H = 0.8        # [추정] 사진으로는 높이를 못 잰다. 현장에서 잴 것
 
 TREE_NEAR_PX = 70    # 경계에서 이만큼 밖까지의 나무는 배경으로 같이 담는다
+TREE_SPACING = 4.0   # 숲 덩어리를 개별 나무로 쪼갤 때의 간격 (m)
+TREE_CROWN = 2.0     # 쪼갠 나무 한 그루의 수관 반지름 (m)
+TREE_JITTER = 0.35   # 격자를 이만큼(간격 대비) 흔든다 — 반듯하면 과수원처럼 보인다
 
 
 # ══════════ 사진에서 뽑기 ══════════
@@ -174,7 +177,7 @@ def polygon(im):
     return [V[i] for i in cyc]
 
 
-def canopy(im, land_px, mow_px):
+def canopy(im, land_px, mow_px, scale):
     """수관 = 어둡고 푸른끼 도는 덩어리. 경계 안이면 장애물, 밖이면 배경."""
     v = im.mean(2)
     r, b = im[..., 0], im[..., 2]
@@ -186,10 +189,27 @@ def canopy(im, land_px, mow_px):
     for _ in range(TREE_NEAR_PX):
         near[1:] |= near[:-1]; near[:-1] |= near[1:]
         near[:, 1:] |= near[:, :-1]; near[:, :-1] |= near[:, 1:]
+    step = TREE_SPACING / scale          # 격자 간격을 픽셀로
     out = []
-    for cx, cy, n in _blobs2(near & (v < 92) & (b >= r - 10), 80):
-        rad = math.sqrt(n / math.pi)
-        out.append((cx, cy, rad, bool(u[int(cy), int(cx)])))
+    for pts in _blobs2(near & (v < 92) & (b >= r - 10), 80):
+        rad = math.sqrt(len(pts) / math.pi)
+        if rad * scale <= TREE_CROWN * 1.6:        # 한 그루짜리 덩어리
+            cy, cx = pts.mean(0)
+            out.append((cx, cy, rad, bool(u[int(cy), int(cx)])))
+            continue
+        # 숲 덩어리다. 등가 반지름으로 돔 하나를 만들면 지름 15 m 짜리
+        # 괴물이 된다 — 덩어리 안쪽에 격자를 깔고 나무를 여러 그루 심는다.
+        mask = np.zeros(v.shape, bool)
+        mask[pts[:, 0].astype(int), pts[:, 1].astype(int)] = True
+        ys, xs = pts[:, 0], pts[:, 1]
+        rng = np.random.default_rng(int(ys.mean()) * 10007 + int(xs.mean()))  # 자리마다 고정
+        for gy in np.arange(ys.min(), ys.max() + 1, step):
+            for gx in np.arange(xs.min(), xs.max() + 1, step):
+                jy, jx = rng.uniform(-TREE_JITTER, TREE_JITTER, 2) * step
+                iy, ix = int(round(gy + jy)), int(round(gx + jx))
+                if 0 <= iy < mask.shape[0] and 0 <= ix < mask.shape[1] and mask[iy, ix]:
+                    crown = TREE_CROWN * rng.uniform(0.75, 1.25) / scale
+                    out.append((float(ix), float(iy), crown, bool(u[iy, ix])))
     return out
 
 
@@ -209,8 +229,7 @@ def _blobs2(mask, minpix):
                     if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and not seen[ny, nx]:
                         seen[ny, nx] = True; q.append((ny, nx))
         if len(pts) >= minpix:
-            a = np.asarray(pts, float)
-            res.append((a[:, 1].mean(), a[:, 0].mean(), len(pts)))
+            res.append(np.asarray(pts, float))    # (row, col) 픽셀 목록 그대로
     return res
 
 
@@ -305,7 +324,7 @@ def main():
     zr_union = max(ELEV_LAND[2], ELEV_MOW[2]) - min(ELEV_LAND[0], ELEV_MOW[0])
     print(f"[측정] 고저차: 전체 {zr_land:.2f} m, 예초 {zr_mow:.2f} m, 합집합 {zr_union:.2f} m")
 
-    trees = canopy(B, land_px, mow_px)
+    trees = canopy(B, land_px, mow_px, S)
     n_in = sum(1 for *_, ins in trees if ins)
     print(f"[추출] 수관 덩어리 {len(trees)}개 — 경계 안 {n_in}개(장애물), "
           f"밖 {len(trees)-n_in}개(배경). 서쪽 '숲 군락'은 경계 밖이다")
