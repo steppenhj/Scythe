@@ -33,6 +33,8 @@ MAX_V = 1.0       # 최고 궤도 속도 (m/s) — '이동은 빠르게'의 상�
 STEP_V = 0.25     # 키 한 번에 바뀌는 속도
 STEER_V = 0.5     # 조향 키 한 번의 세기
 STEER_TAU = 0.6   # 조향이 직진으로 복귀하는 시간 상수 (초) — 핸들 놓으면 돌아오듯
+RENDER_HZ = 50    # 화면 갱신 (Hz). WSLg CPU 렌더링이 버거우면 30, 20 으로 내린다.
+                  # 물리는 이것과 무관하게 2 ms 마다 푼다 — 화면만 성기어진다
 # ──────────────────────────────────────────────────────
 
 XML = f"""
@@ -99,8 +101,7 @@ def key_callback(key):
     elif key in (32, ord("X")):           # 스페이스
         cmd["v"] = cmd["w"] = 0.0
     cmd["v"] = max(-MAX_V, min(MAX_V, cmd["v"]))
-    cmd["w"] = max(-MAX_V, min(MAX_V, cmd["w"]))
-    print(f"\r명령: 전진 {cmd['v']:+.2f} m/s, 회전 {cmd['w']:+.2f}", end="")
+    cmd["w"] = max(-MAX_V, min(MAX_V, cmd["w"]))   # 상태는 메인 루프가 찍는다
 
 def apply_tracks():
     """궤도 표면 속도 쓰기. 표면이 뒤(-x)로 돌아야 차체가 앞(+x)으로 간다."""
@@ -115,31 +116,43 @@ def yaw_of(q):
     return math.degrees(math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)))
 
 print(__doc__)
+print(f"물리 {model.opt.timestep*1000:.0f} ms/스텝, 화면 {RENDER_HZ} Hz "
+      f"→ 한 프레임에 {max(1, round(1/RENDER_HZ/model.opt.timestep))} 스텝")
 
 with mujoco.viewer.launch_passive(model, data,
                                   key_callback=key_callback) as viewer:
-    viewer.cam.distance = 4.0     # 휠로 조절 가능
-    viewer.cam.elevation = -20    # 드래그로 조절 가능
+    viewer.cam.distance = 4.0
+    viewer.cam.elevation = -20
 
-    # 조향 자동 복귀: 매 스텝 이만큼씩 0 으로 줄면 시간상수 STEER_TAU 가 된다
     steer_decay = math.exp(-model.opt.timestep / STEER_TAU)
-    # 카메라 방향은 로봇보다 반 박자 늦게 돈다 — 그래야 회전이 '보인다'
     cam_decay = math.exp(-model.opt.timestep / 0.7)
     cam_az = yaw_of(data.qpos[3:7])
+    steps = max(1, round(1 / RENDER_HZ / model.opt.timestep))
 
     start = time.time()
+    last_print = 0.0
     while viewer.is_running():
-        cmd["w"] *= steer_decay           # 핸들에서 손 떼면 직진 복귀
-        apply_tracks()
-        mujoco.mj_step(model, data)
+
+        # 물리를 한 프레임치 몰아서 푼 뒤에 화면을 한 번 갱신한다
+        for _ in range(steps):
+            cmd["w"] *= steer_decay       # 핸들에서 손 떼면 직진 복귀
+            apply_tracks()
+            mujoco.mj_step(model, data)
 
         # 카메라: 위치는 로봇을 따라가고, 방향은 천천히 따라온다
         diff = (yaw_of(data.qpos[3:7]) - cam_az + 180) % 360 - 180
-        cam_az += diff * (1 - cam_decay)
+        cam_az += diff * (1 - cam_decay ** steps)
         viewer.cam.lookat[:] = [data.qpos[0], data.qpos[1], data.qpos[2] + 0.3]
         viewer.cam.azimuth = cam_az
 
         viewer.sync()
-        wait = data.time - (time.time() - start)
+
+        # 실시간 배속: 1.00 보다 한참 낮으면 화면이 물리를 못 따라오는 것이다
+        wall = time.time() - start
+        if wall - last_print > 0.5:
+            print(f"\r전진 {cmd['v']:+.2f} m/s  회전 {cmd['w']:+.2f}  "
+                  f"실시간 {data.time/wall:4.2f}배 ", end="", flush=True)
+            last_print = wall
+        wait = data.time - wall
         if wait > 0:
             time.sleep(wait)

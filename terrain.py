@@ -33,7 +33,11 @@ FRICTION = 0.6        # 마른 흙 + 마른 풀
 BIG_TREE = 3.5        # 이보다 큰 수관 덩어리는 나무 한 그루가 아니라 숲 덩어리
 # ────────────────────────────────────────────────────────────
 
-RES = 0.2             # 높이 격자 간격 (m)
+RES = 0.2             # 높이 격자 간격 (m). 화면이 버거우면 여기를 올린다 —
+                      #   0.2 → 삼각형 25만개, 봉분 하나를 11칸으로 그린다
+                      #   0.3 → 11만개(44%), 7칸    0.4 → 6만개(25%), 6칸
+                      # 물리 접촉도 이 격자를 쓰므로, 올리면 봉분 모양이 뭉개진다.
+                      # 비교 실험 중에 바꾸면 대조군·실험군이 달라진다 — 먼저 정할 것
 MARGIN = 7.0          # 경계 밖으로 더 그릴 여유
 
 
@@ -177,10 +181,8 @@ if __name__ == "__main__":
     with mujoco.viewer.launch_passive(model, data) as viewer:
         viewer.cam.distance = 70
         viewer.cam.elevation = -35
-        start = time.time()
+        # 움직이는 게 없는 정적인 장면이다. 물리를 돌릴 것도 없고,
+        # viewer.sync() 는 렌더 스레드와 같은 락을 잡으므로 성기게 부른다.
         while viewer.is_running():
-            mujoco.mj_step(model, data)
             viewer.sync()
-            wait = data.time - (time.time() - start)
-            if wait > 0:
-                time.sleep(wait)
+            time.sleep(1 / 20)
