@@ -29,6 +29,11 @@ import terrain_data as D
 # ────── [추정] 사진으로 못 재는 값. 현장 실측으로 교체할 것 ──────
 BANK_H = 1.2          # 경계 밖(이웃 밭)으로 내려가는 둔덕 높이
 BANK_W = 0.8          # 둔덕이 내려가는 데 걸리는 거리 — 여기가 로봇이 떨어지는 턱
+# 상석: 봉분 앞에 놓인 낮은 널돌. 위성으로는 안 잡혀서 일반 치수를 쓴다.
+# (전에 쓰던 0.90×0.60×0.50 m 는 봉분 높이의 62% 짜리 덩어리라 과했다 —
+#  실제 상석은 정육면체가 아니라 납작한 판이다.)
+SANGSEOK_L, SANGSEOK_W, SANGSEOK_H = 1.20, 0.70, 0.25   # 전체 치수 (m)
+SANGSEOK_D = 1.8      # 봉분 중심에서 내리막 쪽으로 이만큼 앞
 FRICTION = 0.6        # 마른 흙 + 마른 풀
 # ────────────────────────────────────────────────────────────
 
@@ -105,12 +110,16 @@ RELIEF = float(Z[_in].max() - Z[_in].min())
 # ────── 지형 위에 얹는 것들 ──────
 _dn = np.asarray(D.DOWNHILL, float)
 
-# 상석: 봉분 앞(내리막 쪽) 1.8 m. 내리막 방향을 알아서 이제 제대로 놓인다
-SANGSEOK = "\n    ".join(
-    f'<geom type="box" size=".45 .3 .25" rgba=".6 .6 .62 1" '
-    f'pos="{mx + _dn[0]*1.8:.2f} {my + _dn[1]*1.8:.2f} '
-    f'{surf(mx + _dn[0]*1.8, my + _dn[1]*1.8) + 0.25:.3f}"/>'
-    for mx, my in D.MOUNDS)
+# 상석: 봉분 앞(내리막 쪽). 내리막 방향을 알아서 이제 제대로 놓인다.
+# size 는 반치수라 절반씩 넣는다. 로봇에겐 넘을 수 없는 장애물이자 진입 금지 표식.
+def _sangseok_xml(mx, my):
+    x, y = mx + _dn[0] * SANGSEOK_D, my + _dn[1] * SANGSEOK_D
+    return (f'<geom type="box" '
+            f'size="{SANGSEOK_L/2:.3f} {SANGSEOK_W/2:.3f} {SANGSEOK_H/2:.3f}" '
+            f'rgba=".6 .6 .62 1" '
+            f'pos="{x:.2f} {y:.2f} {surf(x, y) + SANGSEOK_H/2:.3f}"/>')
+
+SANGSEOK = "\n    ".join(_sangseok_xml(mx, my) for mx, my in D.MOUNDS)
 
 # 나무. 경계 안이면 줄기에 충돌이 있고(로봇이 피해야 한다), 밖이면 배경.
 # 숲 덩어리는 trace.py 가 이미 개별 나무로 쪼개서 준다 — 여기서는 한 그루씩만 그린다.
