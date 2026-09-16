@@ -1,0 +1,638 @@
+<title>Scythe 설계실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F3F5F1; --surface:#FFFFFF; --sunk:#E7EBE4; --line:#D3DACC;
+  --ink:#141A16; --ink-2:#4A5850; --muted:#77877C;
+  --grass:#5A8F3C; --grass-dim:#8FAE79;
+  --inst:#0E7C8C; --inst-soft:#D6EEF1;
+  --ok:#2F7D4F; --warn:#9A6B12; --bad:#B23A2E;
+  --shell:#C9563F; --metal:#6E7780;
+  --shadow:0 1px 2px rgba(20,26,22,.06),0 8px 24px -12px rgba(20,26,22,.18);
+  --sky-1:#E9EEE6; --sky-2:#CFD9C8;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1210; --surface:#151D19; --sunk:#101714; --line:#25322B;
+    --ink:#E6EDE6; --ink-2:#A8B8AC; --muted:#7A8B7E;
+    --grass:#6FA84C; --grass-dim:#4A6B38;
+    --inst:#45C6D6; --inst-soft:#0E3238;
+    --ok:#5FBE84; --warn:#D9A441; --bad:#E2705F;
+    --shell:#D9694F; --metal:#87919C;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -14px rgba(0,0,0,.7);
+    --sky-1:#131A17; --sky-2:#0A0F0D;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1210; --surface:#151D19; --sunk:#101714; --line:#25322B;
+  --ink:#E6EDE6; --ink-2:#A8B8AC; --muted:#7A8B7E;
+  --grass:#6FA84C; --grass-dim:#4A6B38;
+  --inst:#45C6D6; --inst-soft:#0E3238;
+  --ok:#5FBE84; --warn:#D9A441; --bad:#E2705F;
+  --shell:#D9694F; --metal:#87919C;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -14px rgba(0,0,0,.7);
+  --sky-1:#131A17; --sky-2:#0A0F0D;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  font-size:14px; line-height:1.55; margin:0;
+}
+h1,h2,h3{text-wrap:balance;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ── 머리띠 ── */
+.top{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 18px;
+  padding:14px 20px; border-bottom:1px solid var(--line); background:var(--surface);
+}
+.top h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.top h1 .dim{color:var(--muted);font-weight:400}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.fact{
+  font-size:11px; padding:3px 9px; border-radius:2px;
+  background:var(--sunk); color:var(--ink-2); border:1px solid var(--line);
+  white-space:nowrap;
+}
+.fact b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink)}
+
+/* ── 3단 ── */
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr) 290px;gap:0;min-height:0}
+@media (max-width:1080px){ .wrap{grid-template-columns:1fr} }
+
+.rail,.panel{padding:16px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.rail{border-right:1px solid var(--line);background:var(--surface)}
+.panel{border-left:1px solid var(--line);background:var(--surface)}
+@media (max-width:1080px){
+  .rail{border-right:0;border-bottom:1px solid var(--line);order:2}
+  .panel{border-left:0;border-top:1px solid var(--line);order:3}
+  .stage{order:1}
+}
+.grp{display:flex;flex-direction:column;gap:9px}
+.grp>.lbl{
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;
+}
+
+/* ── 머리 고르기 ── */
+.heads{display:flex;flex-direction:column;gap:5px}
+.head{
+  display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;
+  text-align:left;padding:8px 10px;cursor:pointer;
+  background:var(--sunk);color:var(--ink);
+  border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:2px;font:inherit;
+}
+.head:hover{border-color:var(--grass-dim)}
+.head[aria-pressed="true"]{background:var(--surface);border-left-color:var(--inst);box-shadow:var(--shadow)}
+.head .nm{font-weight:600;font-size:13px;grid-column:2}
+.head .sw{width:9px;height:26px;border-radius:1px;grid-row:1/3}
+.head .ds{grid-column:2;font-size:11px;color:var(--muted);line-height:1.4}
+
+/* ── 슬라이더 ── */
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:baseline}
+.sl label{font-size:12px;color:var(--ink-2)}
+.sl output{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.sl input{grid-column:1/3;width:100%;accent-color:var(--inst);margin:1px 0 0}
+.sl input:focus-visible{outline:2px solid var(--inst);outline-offset:3px}
+
+.toggles{display:flex;flex-wrap:wrap;gap:5px}
+.tg{
+  font:inherit;font-size:11px;padding:5px 10px;cursor:pointer;border-radius:2px;
+  background:var(--sunk);color:var(--ink-2);border:1px solid var(--line);
+}
+.tg[aria-pressed="true"]{background:var(--inst-soft);color:var(--inst);border-color:var(--inst);font-weight:600}
+.tg:focus-visible{outline:2px solid var(--inst);outline-offset:2px}
+
+/* ── 무대 ── */
+.stage{position:relative;background:linear-gradient(var(--sky-1),var(--sky-2));min-height:0}
+#gl{display:block;width:100%;height:100%}
+.stage-note{
+  position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--muted);
+  background:color-mix(in srgb,var(--surface) 82%,transparent);
+  padding:4px 9px;border-radius:2px;border:1px solid var(--line);pointer-events:none;
+}
+@media (max-width:1080px){ .stage{height:52vh;min-height:320px} }
+@media (min-width:1081px){
+  html,body{height:100%}
+  body{display:flex;flex-direction:column}
+  .top{flex:0 0 auto}
+  .wrap{flex:1 1 auto;min-height:0}
+  .rail,.panel,.stage{min-height:0}
+  .rail,.panel{overflow-y:auto}
+}
+
+/* ── 계측 패널 ── */
+.read{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.row{
+  display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--line);
+}
+.row .k{font-size:12px;color:var(--ink-2)}
+.row .v{font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.row .n{grid-column:1/3;font-size:11px;color:var(--muted);line-height:1.45}
+.v.ok{color:var(--ok)} .v.warn{color:var(--warn)} .v.bad{color:var(--bad)}
+
+/* 풀 높이 대비 막대 — 이 페이지의 핵심 그림 */
+.gauge{display:flex;flex-direction:column;gap:7px;padding:12px;background:var(--sunk);border:1px solid var(--line);border-radius:2px}
+.gauge .hd{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted)}
+.bars{position:relative;height:104px;display:flex;align-items:flex-end;gap:14px;padding-left:4px}
+.bar{position:relative;flex:1;border-radius:1px 1px 0 0;min-width:0}
+.bar span{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 3px);
+  font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;white-space:nowrap;
+}
+.bar.g{background:linear-gradient(var(--grass),var(--grass-dim))}
+.bar.m{background:var(--shell)}
+.bar.b{background:var(--inst)}
+.blade-line{position:absolute;left:0;right:0;border-top:1px dashed var(--inst);pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:10px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:1px;margin-right:4px;vertical-align:-1px}
+
+/* 저장 */
+.save{display:flex;flex-direction:column;gap:7px}
+.save-row{display:flex;gap:6px}
+.save input[type=text]{
+  flex:1;min-width:0;font:inherit;font-size:12px;padding:6px 9px;border-radius:2px;
+  background:var(--ground);color:var(--ink);border:1px solid var(--line);
+}
+.save input:focus-visible{outline:2px solid var(--inst);outline-offset:-1px;border-color:var(--inst)}
+.btn{
+  font:inherit;font-size:12px;font-weight:600;padding:6px 13px;cursor:pointer;border-radius:2px;
+  background:var(--inst);color:var(--surface);border:1px solid var(--inst);white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.08)} .btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.saved{display:flex;flex-direction:column;gap:3px;margin:0;padding:0;list-style:none}
+.saved li{display:flex;gap:8px;align-items:center;font-size:12px;padding:5px 8px;background:var(--sunk);border:1px solid var(--line);border-radius:2px}
+.saved .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.saved button{font:inherit;font-size:11px;padding:2px 8px;cursor:pointer;border-radius:2px;background:transparent;color:var(--inst);border:1px solid var(--line)}
+.hint{font-size:11px;color:var(--muted);line-height:1.45}
+.prov{font-size:10px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;line-height:1.5}
+.prov b{color:var(--ink-2);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top">
+  <h1>Scythe <span class="dim">설계실</span></h1>
+  <div class="facts">
+    <span class="fact">예초 <b>547</b> ㎡</span>
+    <span class="fact">봉분 <b>7</b>기</span>
+    <span class="fact">기울기 <b>4.6</b>°</span>
+    <span class="fact">벌초 전 풀 <b>0.9</b> m</span>
+    <span class="fact">봉분 사이 최소 <b>0.39</b> m</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- 조작 레일 -->
+  <aside class="rail">
+    <div class="grp">
+      <div class="lbl">절삭 헤드</div>
+      <div class="heads" id="heads"></div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">차체</div>
+      <div class="sl"><label for="p_len">몸통 길이</label><output id="o_len"></output><input type="range" id="p_len" min="0.5" max="1.4" step="0.02"></div>
+      <div class="sl"><label for="p_wid">몸통 폭</label><output id="o_wid"></output><input type="range" id="p_wid" min="0.3" max="0.8" step="0.02"></div>
+      <div class="sl"><label for="p_trk">궤도 폭</label><output id="o_trk"></output><input type="range" id="p_trk" min="0.08" max="0.3" step="0.01"></div>
+      <div class="sl"><label for="p_th">궤도 높이 (≒지상고)</label><output id="o_th"></output><input type="range" id="p_th" min="0.06" max="0.4" step="0.01"></div>
+      <div class="sl"><label for="p_lift">몸통 들어올림</label><output id="o_lift"></output><input type="range" id="p_lift" min="0" max="0.7" step="0.02"></div>
+      <div class="sl"><label for="p_bm">몸통 무게</label><output id="o_bm"></output><input type="range" id="p_bm" min="10" max="70" step="1"></div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">헤드 조정</div>
+      <div class="sl"><label for="p_hm">헤드 무게</label><output id="o_hm"></output><input type="range" id="p_hm" min="0" max="45" step="1"></div>
+      <div class="sl"><label for="p_hz">날 높이</label><output id="o_hz"></output><input type="range" id="p_hz" min="0.04" max="0.85" step="0.01"></div>
+      <div class="sl"><label for="p_hr">앞으로 내민 거리</label><output id="o_hr"></output><input type="range" id="p_hr" min="0.3" max="1.1" step="0.02"></div>
+      <div class="sl"><label for="p_hw">절삭폭</label><output id="o_hw"></output><input type="range" id="p_hw" min="0.25" max="1.2" step="0.02"></div>
+      <div class="sl"><label for="p_v">주행 속도</label><output id="o_v"></output><input type="range" id="p_v" min="0.1" max="0.8" step="0.02"></div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">장면</div>
+      <div class="toggles">
+        <button class="tg" id="t_grass" aria-pressed="true">풀</button>
+        <button class="tg" id="t_ref" aria-pressed="true">사람·봉분</button>
+        <button class="tg" id="t_pole" aria-pressed="true">눈금자</button>
+      </div>
+      <div class="toggles">
+        <button class="tg" id="c_iso">비스듬히</button>
+        <button class="tg" id="c_side">옆에서</button>
+        <button class="tg" id="c_front">앞에서</button>
+        <button class="tg" id="c_top">위에서</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 무대 -->
+  <main class="stage">
+    <canvas id="gl"></canvas>
+    <div class="stage-note">드래그 회전 · 휠 확대 · 눈금 한 칸 0.1 m</div>
+  </main>
+
+  <!-- 계측 패널 -->
+  <aside class="panel">
+    <div class="gauge">
+      <div class="hd"><span>풀 높이 대비</span><span class="mono" id="g_ratio"></span></div>
+      <div class="bars" id="bars">
+        <div class="bar g" id="bar_g"><span>풀 0.90</span></div>
+        <div class="bar m" id="bar_m"><span id="bar_m_l"></span></div>
+        <div class="bar b" id="bar_b"><span id="bar_b_l"></span></div>
+        <div class="blade-line" id="bline"></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--grass)"></i>벌초 전 풀</span>
+        <span><i style="background:var(--shell)"></i>기계 꼭대기</span>
+        <span><i style="background:var(--inst)"></i>날 꼭대기</span>
+      </div>
+    </div>
+
+    <div class="read" id="read"></div>
+
+    <div class="grp save">
+      <div class="lbl">구성 저장</div>
+      <div class="save-row">
+        <input type="text" id="cfg_name" placeholder="예: 줄예초 경량안" maxlength="40">
+        <button class="btn" id="cfg_save">저장</button>
+      </div>
+      <ul class="saved" id="cfg_list"></ul>
+      <p class="hint" id="cfg_hint">저장하면 Claude 가 이 값을 읽어 시뮬레이터에 반영할 수 있습니다.</p>
+    </div>
+
+    <p class="prov">
+      <b>출처</b> 예초 면적·봉분 수·기울기·봉분 간격은 구글어스 캡처에서 추출한 값
+      (<span class="mono">trace.py</span>). 풀 높이 0.9 m 는 현장 확인.
+      헤드 무게·치수는 전부 <b>추정</b>이라 카탈로그로 맞춰야 합니다.
+      무게중심과 고꾸라짐 각은 이 페이지가 그 자리에서 계산합니다.
+    </p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+// ───────── 현장에서 나온 상수 (trace.py 추출값) ─────────
+const GRASS_H = 0.90;      // 벌초 전 풀 높이 — 현장 확인
+const SLOPE = 4.6;         // 바탕 기울기 (도)
+const MOW_AREA = 509.0;    // 봉분·상석·나무를 뺀 실제 벨 풀밭 (㎡)
+const GAPS = [0.39, 1.03, 1.11, 1.80, 2.35];   // 봉분 사이 틈, 좁은 순
+const HUMAN_H = 1.70;
+
+const HEADS = [
+  {id:"none",  nm:"머리 없음",     ds:"지금 robot.py 상태. 기준선",                  kind:null,   hm:0,  hz:0.12, hr:0.50, hw:0.50, col:"#C9563F"},
+  {id:"flail", nm:"플레일 드럼",   ds:"누운 드럼이 풀을 위에서 때려 부순다",          kind:"drum", hm:26, hz:0.19, hr:0.62, hw:0.60, col:"#6E7780"},
+  {id:"line",  nm:"나일론 줄",     ds:"수직축 원반. 지금 쓰시는 예초기와 같은 원리",  kind:"disc", hm:6,  hz:0.13, hr:0.55, hw:0.55, col:"#D8B23C"},
+  {id:"two",   nm:"2단 절삭",      ds:"앞이 윗동을 치고 차체 밑 데크가 마무리",       kind:"drum", hm:14, hz:0.52, hr:0.60, hw:0.60, col:"#3E8FA8"},
+];
+
+const P = {head:"line", len:0.80, wid:0.50, trk:0.15, th:0.12, lift:0, bm:25,
+           hm:6, hz:0.13, hr:0.55, hw:0.55, v:0.30};
+const SHOW = {grass:true, ref:true, pole:true};
+
+// ───────── 계산 ─────────
+function metrics(){
+  const trackM = 5.0 * 2;
+  const total = P.bm + trackM + P.hm;
+  const bodyH = 0.20;
+  const czTrack = P.th/2;                       // 궤도는 바닥에 붙어 있다
+  const czBody  = P.th + P.lift + bodyH/2;      // 몸통은 궤도 위에, 들어올린 만큼 더
+  const cz = (trackM*czTrack + P.bm*czBody + P.hm*P.hz) / total;
+  const cx = P.hm * P.hr / total;
+  const tip = Math.atan2(P.len/2 - cx, cz) * 180/Math.PI;   // 앞으로 고꾸라지는 각
+  const top = P.th + P.lift + bodyH;                        // 기계 꼭대기
+  const head = HEADS.find(h=>h.id===P.head);
+  const bladeTop = head.kind==="drum" ? P.hz + 0.17 : (head.kind==="disc" ? P.hz + 0.012 : 0);
+  const fullW = P.wid + 2*P.trk;
+  const dist = MOW_AREA / P.hw;                             // 주행거리
+  const hours = dist / P.v * 1.2 / 3600;                    // 겹침 20%
+  const passable = GAPS.filter(g=>g > fullW).length;
+  return {total, cz, cx, tip, top, bladeTop, fullW, dist, hours, passable, head, bodyH};
+}
+
+// ───────── 3D ─────────
+const cv = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
+const cam = {az:-0.72, el:0.30, r:6.2, tx:0.35, ty:0.60, tz:0};
+
+function placeCam(){
+  const cy = Math.cos(cam.el), sy = Math.sin(cam.el);
+  camera.position.set(cam.tx + cam.r*cy*Math.cos(cam.az),
+                      cam.ty + cam.r*sy,
+                      cam.tz + cam.r*cy*Math.sin(cam.az));
+  camera.lookAt(cam.tx, cam.ty, cam.tz);
+}
+
+scene.add(new THREE.HemisphereLight(0xdfe8dc, 0x2c3326, 0.75));
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.05);
+sun.position.set(-3.5, 6, 3); sun.castShadow = true;
+sun.shadow.mapSize.set(1024,1024);
+const sc = sun.shadow.camera;
+sc.left=-7; sc.right=7; sc.top=7; sc.bottom=-7; sc.near=0.5; sc.far=24;
+scene.add(sun);
+
+// 땅
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50,50),
+  new THREE.MeshStandardMaterial({color:0x5c6b4e, roughness:1})
+);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(24, 48, 0x7d8c6e, 0x6b7a5e);
+grid.material.transparent = true; grid.material.opacity = 0.32;
+grid.position.y = 0.002; scene.add(grid);
+
+const gRobot = new THREE.Group(); scene.add(gRobot);
+const gGrass = new THREE.Group(); scene.add(gGrass);
+const gRef   = new THREE.Group(); scene.add(gRef);
+const gPole  = new THREE.Group(); scene.add(gPole);
+
+const mat = (c,o)=> new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:0.72, metalness:0.06}, o||{}));
+function box(w,h,d,c,x,y,z,o){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c,o));
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function cyl(r,h,c,x,y,z,axis,o){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,26), mat(c,o));
+  if(axis==="z") m.rotation.x = Math.PI/2;
+  if(axis==="x") m.rotation.z = Math.PI/2;
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function clear(g){ while(g.children.length){ const c=g.children.pop(); c.geometry&&c.geometry.dispose(); } }
+
+function buildRobot(){
+  clear(gRobot);
+  const h = HEADS.find(x=>x.id===P.head);
+  const bodyH = 0.20;
+  const bodyY = P.th + P.lift + bodyH/2;
+  gRobot.add(box(P.len, bodyH, P.wid, h.id==="none"?0xc9563f:0xb9503c, 0, bodyY, 0));
+  // 궤도 둘
+  for(const s of [1,-1]){
+    gRobot.add(box(P.len, P.th, P.trk, 0x2a2e2b, 0, P.th/2, s*(P.wid+P.trk)/2));
+  }
+  // 들어올린 만큼 기둥 넷
+  if(P.lift > 0.01){
+    for(const sx of [1,-1]) for(const sz of [1,-1]){
+      gRobot.add(box(0.06, P.lift, 0.06, 0x4a5048,
+        sx*P.len*0.36, P.th + P.lift/2, sz*(P.wid/2-0.05)));
+    }
+  }
+  if(h.kind){
+    const col = parseInt(h.col.slice(1),16);
+    if(h.kind==="drum") gRobot.add(cyl(0.17, P.hw, col, P.hr, P.hz, 0, "z"));
+    else gRobot.add(cyl(P.hw/2, 0.024, col, P.hr, P.hz, 0, null));
+    for(const s of [1,-1]){
+      gRobot.add(box(P.hr, 0.05, 0.05, 0x3f4640, P.hr/2, P.hz, s*P.hw*0.34));
+    }
+  }
+}
+
+function buildGrass(){
+  clear(gGrass);
+  // 풀 덩어리: 로봇을 감싸는 반투명 상자
+  gGrass.add(box(3.0, GRASS_H, 2.6, 0x4e7a34, 0.3, GRASS_H/2, 0,
+    {transparent:true, opacity:0.26, roughness:1}));
+  // 듬성듬성 풀잎 — 부피감만
+  for(let i=0;i<70;i++){
+    const a = (i*2.399), rr = 0.25 + (i%13)*0.11;
+    const x = 0.3 + Math.cos(a)*rr*1.15, z = Math.sin(a)*rr;
+    if(Math.abs(x-0.3)>1.45 || Math.abs(z)>1.25) continue;
+    const hh = GRASS_H*(0.72 + (i%7)*0.04);
+    const b = box(0.016, hh, 0.016, 0x64994a, x, hh/2, z, {roughness:1});
+    b.rotation.z = (i%5-2)*0.05; b.castShadow=false; gGrass.add(b);
+  }
+}
+
+function buildRef(){
+  clear(gRef);
+  // 사람 1.70 m
+  const px=-1.9, pz=1.25;
+  gRef.add(cyl(0.16, 0.80, 0x5c6169, px, 0.40, pz));
+  gRef.add(cyl(0.21, 0.62, 0x6d727a, px, 1.11, pz));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.115,18,14), mat(0x9a8b78));
+  head.position.set(px, 1.55, pz); head.castShadow = true; gRef.add(head);
+  // 봉분 (지름 2.2, 높이 0.8) + 상석
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1.1,30,18), mat(0x5f7346));
+  m.scale.y = 0.8/1.1; m.position.set(2.7,0,-2.6); m.castShadow=true; m.receiveShadow=true;
+  gRef.add(m);
+  gRef.add(box(1.2,0.25,0.7, 0x8d9299, 2.7, 0.125, -1.15));
+}
+
+function buildPole(){
+  clear(gPole);
+  for(let i=0;i<10;i++){
+    gPole.add(cyl(0.028, 0.1, i%2===0 ? 0xcf3b2c : 0xf2f0ea, -1.15, i*0.1+0.05, -1.15));
+  }
+}
+
+function resize(){
+  const r = cv.parentElement.getBoundingClientRect();
+  const w = Math.max(1, r.width|0), h = Math.max(1, r.height|0);
+  renderer.setSize(w,h,false);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+
+let raf = 0;
+function draw(){ raf=0; placeCam(); renderer.render(scene,camera); }
+function queue(){ if(!raf) raf = requestAnimationFrame(draw); }
+
+// 카메라 조작 — 라이브러리 없이
+let drag=null;
+cv.addEventListener("pointerdown", e=>{ drag={x:e.clientX,y:e.clientY}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e=>{
+  if(!drag) return;
+  cam.az -= (e.clientX-drag.x)*0.008;
+  cam.el = Math.max(-0.15, Math.min(1.45, cam.el + (e.clientY-drag.y)*0.006));
+  drag={x:e.clientX,y:e.clientY}; queue();
+});
+["pointerup","pointercancel"].forEach(t=>cv.addEventListener(t, ()=>{drag=null;}));
+cv.addEventListener("wheel", e=>{
+  e.preventDefault();
+  cam.r = Math.max(1.6, Math.min(16, cam.r * (1 + Math.sign(e.deltaY)*0.11)));
+  queue();
+}, {passive:false});
+
+// ───────── DOM ─────────
+const $ = id => document.getElementById(id);
+const fm = (n,d)=> n.toFixed(d===undefined?2:d);
+
+function paintHeads(){
+  const el = $("heads"); el.innerHTML = "";
+  for(const h of HEADS){
+    const b = document.createElement("button");
+    b.className = "head"; b.type = "button";
+    b.setAttribute("aria-pressed", String(h.id===P.head));
+    b.innerHTML = `<span class="sw" style="background:${h.col}"></span>`
+      + `<span class="nm"></span><span class="ds"></span>`;
+    b.querySelector(".nm").textContent = h.nm;
+    b.querySelector(".ds").textContent = h.ds;
+    b.addEventListener("click", ()=>{
+      P.head = h.id; P.hm = h.hm; P.hz = h.hz; P.hr = h.hr; P.hw = h.hw;
+      syncInputs(); paintHeads(); all();
+    });
+    el.appendChild(b);
+  }
+}
+
+const SLIDERS = [
+  ["p_len","o_len","len", v=>fm(v)+" m"],
+  ["p_wid","o_wid","wid", v=>fm(v)+" m"],
+  ["p_trk","o_trk","trk", v=>fm(v)+" m"],
+  ["p_th","o_th","th",   v=>fm(v)+" m"],
+  ["p_lift","o_lift","lift", v=>fm(v)+" m"],
+  ["p_bm","o_bm","bm",   v=>fm(v,0)+" kg"],
+  ["p_hm","o_hm","hm",   v=>fm(v,0)+" kg"],
+  ["p_hz","o_hz","hz",   v=>fm(v)+" m"],
+  ["p_hr","o_hr","hr",   v=>fm(v)+" m"],
+  ["p_hw","o_hw","hw",   v=>fm(v)+" m"],
+  ["p_v","o_v","v",      v=>fm(v)+" m/s"],
+];
+function syncInputs(){
+  for(const [iid,oid,key,f] of SLIDERS){
+    $(iid).value = P[key]; $(oid).textContent = f(P[key]);
+  }
+}
+for(const [iid,oid,key,f] of SLIDERS){
+  $(iid).addEventListener("input", e=>{
+    P[key] = parseFloat(e.target.value); $(oid).textContent = f(P[key]); all();
+  });
+}
+
+function bindToggle(id, key, g){
+  $(id).addEventListener("click", ()=>{
+    SHOW[key] = !SHOW[key];
+    $(id).setAttribute("aria-pressed", String(SHOW[key]));
+    g.visible = SHOW[key]; queue();
+  });
+}
+bindToggle("t_grass","grass",gGrass);
+bindToggle("t_ref","ref",gRef);
+bindToggle("t_pole","pole",gPole);
+
+const VIEWS = {
+  c_iso:  {az:-0.72, el:0.30, r:6.2, ty:0.60},
+  c_side: {az:0,     el:0.06, r:5.0, ty:0.55},
+  c_front:{az:-Math.PI/2, el:0.10, r:4.6, ty:0.50},
+  c_top:  {az:-0.72, el:1.32, r:6.4, ty:0.30},
+};
+for(const k in VIEWS){
+  $(k).addEventListener("click", ()=>{
+    Object.assign(cam, VIEWS[k]);
+    for(const j in VIEWS) $(j).setAttribute("aria-pressed", String(j===k));
+    queue();
+  });
+}
+$("c_iso").setAttribute("aria-pressed","true");
+
+function verdictClass(kind, m){
+  if(kind==="tip")  return m.tip>55 ? "ok" : m.tip>35 ? "warn" : "bad";
+  if(kind==="gap")  return m.passable>=4 ? "ok" : m.passable>=3 ? "warn" : "bad";
+  if(kind==="mass") return m.total<=45 ? "ok" : m.total<=70 ? "warn" : "bad";
+  if(kind==="time") return m.hours<=4 ? "ok" : m.hours<=6 ? "warn" : "bad";
+  if(kind==="blade")return m.bladeTop>=GRASS_H*0.8 ? "ok" : m.bladeTop>=GRASS_H*0.45 ? "warn" : "bad";
+  return "";
+}
+
+function paintRead(m){
+  const rows = [
+    ["총무게", fm(m.total,0)+" kg", verdictClass("mass",m),
+     `몸통 ${fm(P.bm,0)} + 궤도 10 + 헤드 ${fm(P.hm,0)}. 시중 소형 원격예초기는 130~140 kg 급입니다.`],
+    ["앞으로 고꾸라지는 각", fm(m.tip,1)+"°", verdictClass("tip",m),
+     `무게중심이 앞으로 ${fm(m.cx,3)} m, 높이 ${fm(m.cz,3)} m. 이 땅 기울기 ${SLOPE}° 대비 여유 ${fm(m.tip-SLOPE,1)}°.`],
+    ["전폭", fm(m.fullW)+" m", verdictClass("gap",m),
+     `봉분 사이 좁은 틈 5곳 중 ${m.passable}곳 통과. 제일 좁은 곳은 0.39 m 입니다.`],
+    ["날 꼭대기", fm(m.bladeTop)+" m", verdictClass("blade",m),
+     m.head.kind ? `풀 0.90 m 의 ${Math.round(m.bladeTop/GRASS_H*100)}% 지점을 칩니다. 나머지는 눕거나 기계 위로 쏟아집니다.`
+                 : "헤드가 없습니다. 자르는 게 없어요."],
+    ["예초 시간", fm(m.hours,1)+" 시간", verdictClass("time",m),
+     `절삭폭 ${fm(P.hw)} m 로 ${Math.round(m.dist)} m 주행, 겹침 20% 포함. 사람은 2시간입니다.`],
+  ];
+  const el = $("read"); el.innerHTML = "";
+  for(const [k,v,cls,note] of rows){
+    const d = document.createElement("div"); d.className = "row";
+    d.innerHTML = `<span class="k"></span><span class="v ${cls}"></span><span class="n"></span>`;
+    d.querySelector(".k").textContent = k;
+    d.querySelector(".v").textContent = v;
+    d.querySelector(".n").textContent = note;
+    el.appendChild(d);
+  }
+}
+
+function paintGauge(m){
+  const MAX = Math.max(GRASS_H, m.top, m.bladeTop, 1.0) * 1.12;
+  const pct = v => Math.max(3, v/MAX*100) + "%";
+  $("bar_g").style.height = pct(GRASS_H);
+  $("bar_m").style.height = pct(m.top);
+  $("bar_b").style.height = pct(Math.max(m.bladeTop, 0.02));
+  $("bar_m_l").textContent = "기계 " + fm(m.top);
+  $("bar_b_l").textContent = m.head.kind ? "날 " + fm(m.bladeTop) : "날 없음";
+  $("bline").style.bottom = "calc(" + pct(GRASS_H) + " - 1px)";
+  $("g_ratio").textContent = "풀이 기계의 " + fm(GRASS_H/m.top,1) + "배";
+}
+
+function all(){ buildRobot(); buildGrass(); queue(); const m = metrics(); paintRead(m); paintGauge(m); }
+
+// ───────── 저장 (db) ─────────
+let db = null;
+function cfgBody(){
+  const m = metrics();
+  return {name:$("cfg_name").value.trim() || "이름 없음", ts:Date.now(),
+          params:Object.assign({}, P),
+          derived:{total:+m.total.toFixed(1), tip:+m.tip.toFixed(1), fullW:+m.fullW.toFixed(3),
+                   bladeTop:+m.bladeTop.toFixed(3), hours:+m.hours.toFixed(2), passable:m.passable}};
+}
+function paintSaved(docs){
+  const ul = $("cfg_list"); ul.innerHTML = "";
+  if(!docs.length){ $("cfg_hint").textContent = "저장하면 Claude 가 이 값을 읽어 시뮬레이터에 반영할 수 있습니다."; return; }
+  for(const d of docs){
+    const v = d.data() || {};
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="nm"></span><span class="mono" style="font-size:11px;color:var(--muted)"></span><button type="button">불러오기</button>`;
+    li.querySelector(".nm").textContent = v.name || d.id;
+    li.querySelector(".mono").textContent = (v.derived ? v.derived.total + "kg" : "");
+    li.querySelector("button").addEventListener("click", ()=>{
+      if(!v.params) return;
+      Object.assign(P, v.params); syncInputs(); paintHeads(); all();
+    });
+    ul.appendChild(li);
+  }
+}
+$("cfg_save").addEventListener("click", async ()=>{
+  if(!db){ $("cfg_hint").textContent = "이 화면에서는 저장이 안 됩니다. 값은 그대로 쓰시면 됩니다."; return; }
+  const btn = $("cfg_save"); btn.disabled = true;
+  try{
+    await db.collection("configs").add(cfgBody());
+    $("cfg_name").value = "";
+    $("cfg_hint").textContent = "저장했습니다.";
+  }catch(err){
+    $("cfg_hint").textContent = err && err.code === "invalid_argument"
+      ? "이 화면에서는 저장 권한이 없습니다." : "저장하지 못했습니다. 잠시 뒤 다시 눌러보세요.";
+  }finally{ btn.disabled = false; }
+});
+
+Promise.resolve(window.claude && window.claude.use ? window.claude.use("db") : null).then(d=>{
+  if(!d) return;
+  db = d;
+  db.collection("configs").orderBy("ts","desc").limit(12)
+    .onSnapshot(s=>paintSaved(s.docs), ()=>{ $("cfg_hint").textContent = "저장 목록을 불러오지 못했습니다."; });
+}).catch(()=>{});
+
+// ───────── 시작 ─────────
+buildRef(); buildPole(); syncInputs(); paintHeads(); all();
+resize(); placeCam(); draw();
+addEventListener("resize", ()=>{ resize(); queue(); });
+if(window.ResizeObserver) new ResizeObserver(()=>{ resize(); queue(); }).observe(cv.parentElement);
+})();
+</script>
