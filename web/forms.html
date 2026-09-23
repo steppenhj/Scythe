@@ -1,0 +1,1426 @@
+<title>Scythe 형태 도감</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F3F5F1; --surface:#FFFFFF; --sunk:#E7EBE4; --line:#D3DACC;
+  --ink:#141A16; --ink-2:#4A5850; --muted:#77877C;
+  --grass:#5A8F3C; --grass-dim:#8FAE79;
+  --inst:#0E7C8C; --inst-soft:#D6EEF1;
+  --ok:#2F7D4F; --warn:#9A6B12; --bad:#B23A2E;
+  --shadow:0 1px 2px rgba(20,26,22,.06),0 8px 24px -12px rgba(20,26,22,.18);
+  --sky-1:#E9EEE6; --sky-2:#CFD9C8;
+  --tag:rgba(255,255,255,.9);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0D1210; --surface:#151D19; --sunk:#101714; --line:#25322B;
+    --ink:#E6EDE6; --ink-2:#A8B8AC; --muted:#7A8B7E;
+    --grass:#6FA84C; --grass-dim:#4A6B38;
+    --inst:#45C6D6; --inst-soft:#0E3238;
+    --ok:#5FBE84; --warn:#D9A441; --bad:#E2705F;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -14px rgba(0,0,0,.7);
+    --sky-1:#131A17; --sky-2:#0A0F0D;
+    --tag:rgba(21,29,25,.9);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0D1210; --surface:#151D19; --sunk:#101714; --line:#25322B;
+  --ink:#E6EDE6; --ink-2:#A8B8AC; --muted:#7A8B7E;
+  --grass:#6FA84C; --grass-dim:#4A6B38;
+  --inst:#45C6D6; --inst-soft:#0E3238;
+  --ok:#5FBE84; --warn:#D9A441; --bad:#E2705F;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -14px rgba(0,0,0,.7);
+  --sky-1:#131A17; --sky-2:#0A0F0D;
+  --tag:rgba(21,29,25,.9);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  font-size:14px; line-height:1.55; margin:0;
+}
+h1,h2,h3{text-wrap:balance;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ── 머리띠 ── */
+.top{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 18px;
+  padding:14px 20px; border-bottom:1px solid var(--line); background:var(--surface);
+}
+.top h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.top h1 .dim{color:var(--muted);font-weight:400}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.fact{
+  font-size:11px; padding:3px 9px; border-radius:2px;
+  background:var(--sunk); color:var(--ink-2); border:1px solid var(--line);
+  white-space:nowrap;
+}
+.fact b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink)}
+.fact.caveat{background:transparent;border-style:dashed}
+
+/* ── 3단 ── */
+.wrap{display:grid;grid-template-columns:340px minmax(0,1fr) 340px;min-height:0}
+@media (max-width:1180px){ .wrap{grid-template-columns:1fr} }
+.rail,.panel{padding:16px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.rail{border-right:1px solid var(--line);background:var(--surface)}
+.panel{border-left:1px solid var(--line);background:var(--surface)}
+@media (max-width:1180px){
+  .rail{border-right:0;border-bottom:1px solid var(--line);order:2}
+  .panel{border-left:0;border-top:1px solid var(--line);order:3}
+  .stage{order:1}
+}
+.grp{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* ── 목록이 곧 비교표 ── */
+.mx{display:flex;flex-direction:column;gap:5px}
+.mrow,.fm{display:grid;grid-template-columns:9px minmax(0,1fr) auto;gap:0 10px;align-items:center}
+.mrow{padding:0 11px 2px 13px}
+.dots{display:grid;grid-template-columns:repeat(6,24px);justify-items:center;align-items:center}
+.mrow .dots b{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.fm{
+  text-align:left;padding:9px 10px;cursor:pointer;font:inherit;color:var(--ink);
+  background:var(--sunk);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:2px;
+}
+.fm:hover{border-color:var(--grass-dim)}
+.fm[aria-pressed="true"]{background:var(--surface);border-left-color:var(--inst);box-shadow:var(--shadow)}
+.fm:focus-visible{outline:2px solid var(--inst);outline-offset:2px}
+.fm .sw{width:9px;height:30px;border-radius:1px}
+.fm .tx{display:flex;flex-direction:column;min-width:0}
+.fm .nm{font-weight:600;font-size:13px;line-height:1.3}
+.fm .ds{font-size:11px;color:var(--muted);line-height:1.35}
+.d{width:11px;height:11px;border-radius:50%;display:inline-block}
+.d2{background:var(--ok);border:1.5px solid var(--ok)}
+.d1{background:linear-gradient(90deg,var(--warn) 50%,transparent 50%);border:1.5px solid var(--warn)}
+.d0{background:transparent;border:1.5px solid var(--bad)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.crit{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11.5px;color:var(--ink-2);margin:0}
+.crit dt{font-weight:600;color:var(--ink)}
+.crit dd{margin:0}
+.aside-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0}
+
+/* ── 현장 조건 ── */
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:baseline}
+.sl label{font-size:12px;color:var(--ink-2)}
+.sl output{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.sl input{grid-column:1/3;width:100%;accent-color:var(--inst);margin:1px 0 0}
+.sl input:focus-visible{outline:2px solid var(--inst);outline-offset:3px}
+.seg-row{display:grid;grid-template-columns:82px 1fr;gap:8px;align-items:center}
+.seg-l{font-size:12px;color:var(--ink-2)}
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg button{
+  flex:1;font:inherit;font-size:11.5px;padding:5px 6px;cursor:pointer;border:0;
+  background:var(--sunk);color:var(--ink-2);
+}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--inst-soft);color:var(--inst);font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--inst);outline-offset:-2px}
+.seg button:disabled{cursor:default;opacity:.45}
+
+/* ── 계산 비교표 ── */
+.calc-wrap{overflow-x:auto}
+table.calc{width:100%;border-collapse:collapse;font-size:11.5px}
+.calc th{
+  font-size:10px;font-weight:600;color:var(--muted);text-align:right;padding:0 0 5px 6px;
+  border-bottom:1px solid var(--line);line-height:1.3;vertical-align:bottom;
+}
+.calc th:first-child{text-align:left;padding-left:0}
+.calc td{padding:5px 0 5px 6px;border-bottom:1px solid var(--line);text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+.calc td:first-child{text-align:left;padding-left:0;font-family:inherit;color:var(--ink-2)}
+.calc tr{cursor:pointer}
+.calc tbody tr:hover td{background:var(--sunk)}
+.calc tr.on td{background:var(--inst-soft)}
+.calc tr.on td:first-child{color:var(--ink);font-weight:600}
+.calc tr:focus-visible{outline:2px solid var(--inst);outline-offset:-2px}
+.calc .bar{display:block;height:3px;border-radius:2px;background:var(--inst);margin-top:3px;margin-left:auto}
+.calc .na{color:var(--muted)}
+
+/* ── 무대 ── */
+.stage{position:relative;background:linear-gradient(var(--sky-1),var(--sky-2));min-height:0;overflow:hidden}
+#gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+.tags{position:absolute;inset:0;pointer-events:none}
+.tag{
+  position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+  font-size:11px;line-height:1.3;padding:3px 8px;border-radius:2px;
+  background:var(--tag);color:var(--ink);border:1px solid var(--line);
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+}
+.tag::after{content:"";position:absolute;left:50%;bottom:-6px;width:1px;height:6px;background:var(--ink-2)}
+.tag.warn{border-color:var(--bad);color:var(--bad)}
+.ctl{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.tg{
+  font:inherit;font-size:11.5px;padding:5px 11px;cursor:pointer;border-radius:2px;
+  background:var(--surface);color:var(--ink-2);border:1px solid var(--line);
+}
+.tg:hover{color:var(--ink);border-color:var(--grass-dim)}
+.tg:focus-visible{outline:2px solid var(--inst);outline-offset:2px}
+.meter{
+  position:absolute;top:10px;left:10px;width:214px;padding:9px 11px 8px;
+  background:color-mix(in srgb,var(--surface) 90%,transparent);
+  border:1px solid var(--line);border-radius:2px;display:flex;flex-direction:column;gap:3px;
+}
+.meter .mt{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:2px}
+.meter .mg{display:grid;grid-template-columns:1fr auto;font-size:11.5px;color:var(--ink-2)}
+.meter .mg b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.meter .mg b.bad{color:var(--bad)}
+#spark{width:100%;height:56px;display:block;margin-top:4px}
+.meter .mf{font-size:10.5px;color:var(--muted);line-height:1.35}
+@media (max-width:560px){ .meter{width:170px;padding:7px 9px} #spark{height:40px} }
+.stage-note{
+  position:absolute;left:12px;bottom:10px;right:12px;font-size:11px;color:var(--muted);
+  pointer-events:none;
+}
+.stage-note span{
+  display:inline-block;background:color-mix(in srgb,var(--surface) 84%,transparent);
+  padding:4px 9px;border-radius:2px;border:1px solid var(--line);
+}
+@media (max-width:1180px){ .stage{height:62vh;min-height:380px} }
+@media (min-width:1181px){
+  html,body{height:100%}
+  body{display:flex;flex-direction:column}
+  .top{flex:0 0 auto}
+  .wrap{flex:1 1 auto;min-height:0}
+  .rail,.panel,.stage{min-height:0}
+  .rail,.panel{overflow-y:auto}
+}
+
+/* ── 설명 ── */
+.panel h2{font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.panel .kind{font-size:11px;color:var(--muted);margin-bottom:3px}
+.lead{margin:6px 0 0;color:var(--ink-2)}
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec p{margin:0;color:var(--ink-2);font-size:13px}
+.pm{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pm li{display:grid;grid-template-columns:14px 1fr;gap:6px;font-size:13px;color:var(--ink-2);line-height:1.5}
+.pm li::before{font-family:"IBM Plex Mono",monospace;font-weight:600}
+.pm li.p::before{content:"+";color:var(--ok)}
+.pm li.m::before{content:"−";color:var(--bad)}
+.quote{
+  margin:0;padding:10px 12px;background:var(--inst-soft);border-radius:2px;
+  font-size:12.5px;color:var(--ink);line-height:1.55;
+}
+.quote b{color:var(--inst);font-weight:600}
+.why{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.why div{display:grid;grid-template-columns:62px 14px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px}
+.why .k{color:var(--ink-2);font-weight:500}
+.why .r{color:var(--ink-2);line-height:1.4}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+
+<header class="top">
+  <h1>Scythe 형태 도감 <span class="dim">· 풀을 베는 여섯 가지 몸</span></h1>
+  <div class="facts">
+    <span class="fact">벌초 전 풀 <b>0.6~1.15</b> m</span>
+    <span class="fact">쑥 줄기 <b>1.0~1.4</b> m</span>
+    <span class="fact">사람 <b>1.7</b> m</span>
+    <span class="fact caveat">풀은 그림 · 땅×차체×날은 계산 · 요철은 추정</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="rail">
+    <div class="grp">
+      <div class="lbl">형태 — Claude 의견</div>
+      <div class="mx" id="mx">
+        <div class="mrow" aria-hidden="true"><span></span><span></span>
+          <span class="dots"><b>풀</b><b>돌</b><b>땅</b><b>틈</b><b>무게</b><b>현장</b></span>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="d d2"></i>유리</span>
+        <span><i class="d d1"></i>애매</span>
+        <span><i class="d d0"></i>불리</span>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">현장 조건</div>
+      <div class="sl">
+        <label for="rough">땅 요철 (대략 가장 높은 곳)</label><output id="rough_o" for="rough">±6 cm</output>
+        <input type="range" id="rough" min="0" max="12" step="1" value="6">
+      </div>
+      <div class="seg-row"><span class="seg-l">주행</span>
+        <div class="seg" id="seg_drive" role="group" aria-label="주행 방식">
+          <button type="button" id="drv_track" data-v="track">궤도</button><button type="button" id="drv_wheel" data-v="wheel">바퀴</button>
+        </div>
+      </div>
+      <div class="seg-row"><span class="seg-l">모어바 받침</span>
+        <div class="seg" id="seg_float" role="group" aria-label="모어바 받침">
+          <button type="button" id="flt_rigid" data-v="rigid">차체에 고정</button><button type="button" id="flt_float" data-v="float">썰매로 뜸</button>
+        </div>
+      </div>
+      <p class="aside-note">요철 크기는 재지 않은 추정값입니다. 현장에서 막대를 대고 재면 그 값으로 바꾸겠습니다.</p>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">계산 — 같은 땅을 지나가며</div>
+      <div class="calc-wrap">
+        <table class="calc" id="calc">
+          <thead><tr><th>조합</th><th>최대<br>기울기</th><th>날 높이<br>흔들림</th><th>흙 친<br>비율</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="aside-note" id="calc_note"></p>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">여섯 기준</div>
+      <dl class="crit">
+        <dt>풀</dt><dd>0.9 m 키 큰 풀을 몇 번 만에</dd>
+        <dt>돌</dt><dd>풀 속 돌·가장자리 돌무더기</dd>
+        <dt>땅</dt><dd>흙땅 울퉁불퉁, 나무 밑</dd>
+        <dt>틈</dt><dd>봉분 사이 틈 0.39 · 1.03 · 1.11 · 1.80 · 2.35 m, 감나무</dd>
+        <dt>무게</dt><dd>싸고 가볍게 — 130~140 kg급 거부</dd>
+        <dt>현장</dt><dd>준비·보관·고장 났을 때 1시간 거리</dd>
+      </dl>
+      <p class="aside-note">점은 Claude 의견입니다. 위의 계산표는 그와 별개로, 요철 추정값 위에서 기하로 계산한 것입니다.</p>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <canvas id="gl" aria-label="선택한 예초 형태의 3D 장면. 끌어서 돌리고 휠로 확대합니다."></canvas>
+    <div class="tags" id="tags"></div>
+    <div class="meter" aria-live="off">
+      <div class="mt">이 장면, 지금</div>
+      <div class="mg"><span>앞뒤 기울기</span><b id="m_pitch">—</b></div>
+      <div class="mg"><span>좌우 기울기</span><b id="m_roll">—</b></div>
+      <div class="mg"><span>날–땅 간격 (가장 낮은 곳)</span><b id="m_clear">—</b></div>
+      <canvas id="spark" aria-label="최근 몇 초 동안의 날–땅 간격 변화"></canvas>
+      <div class="mf">날–땅 간격, 최근 8초 · 붉은 곳은 날이 땅보다 낮아 흙을 친 순간</div>
+    </div>
+    <div class="ctl">
+      <button class="tg" id="b_play" type="button">일시정지</button>
+      <button class="tg" id="b_restart" type="button">처음부터</button>
+    </div>
+    <div class="stage-note"><span>풀이 눕고 튕기는 모습은 그림(가정)입니다 · 기울기와 날 높이는 요철 위 정지 자세로 계산 · 끌어서 돌리기, 휠로 확대</span></div>
+  </main>
+
+  <aside class="panel" id="panel"></aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+const GRASS_H = 0.90;   // 벌초 전 풀 — 현장 확인
+const CRIT = ["풀","돌","땅","틈","무게","현장"];
+const CUT = 0.05;       // 평지에서의 날 높이 (모든 차량 같음)
+
+// ───────── 여섯 형태 ─────────
+const FORMS = [
+  {id:"rotary", nm:"앞 회전날", kind:"궤도 차량", col:"#D8B23C",
+   one:"지금 쓰시는 예초기를 차량 앞에 단 형태. 설계실의 '나일론 줄' 안.",
+   how:"수직축 원반(나일론 줄이나 쇠날)이 빠르게 돌며 풀을 때려 끊습니다. 배부식 예초기와 같은 원리입니다.",
+   plus:["돌에 강합니다. 줄은 돌을 치면 끊어지고 다시 뽑혀 나옵니다.",
+         "전폭 0.8 m 라 봉분 틈 다섯 중 넷을 지납니다."],
+   minus:["0.9 m 풀을 밑동에서 치면 쓰러진 풀대가 도는 날을 덮고 감깁니다. 장면에서 날 가운데 초록 뭉치가 커지는 것.",
+          "날(0.55 m)이 차체(0.8 m)보다 좁으면 궤도가 안 벤 풀을 눕히고 지나갑니다. 단단한 쑥대는 지나간 뒤 다시 일어섭니다.",
+          "날이 차체 앞 0.72 m 에 나가 있어, 차체가 조금만 앞뒤로 기울어도 날 높이가 크게 흔들립니다 — 계산표에서 확인."],
+   quote:"<b>9/19</b> “키 큰 풀은 위를 몇 번 베어야 아래를 벨 수 있다” — 회전날의 한계가 사람 손에서도 똑같이 나온 것.",
+   emb:"감김은 모터 전류가 서서히 오르는 모양, 돌 걸림은 순간 급등입니다. 둘을 구분하는 게 Phase 3 의 첫 과제가 됩니다.",
+   real:"시중 원격 예초기(130~140 kg급) 다수가 회전날·플레일 계열입니다.",
+   s:[0,2,1,2,1,2],
+   why:["풀대가 날에 감김 → 위부터 여러 번","줄은 돌을 쳐도 다시 나옴","날이 앞에 나가 기울기가 날 높이로 커짐","전폭 0.8 m — 틈 5곳 중 4곳","고속 회전에 드는 동력이 큼","내려서 몰면 끝"]},
+
+  {id:"bar", nm:"앞 모어바", kind:"궤도 차량 · 전단", col:"#8A949E",
+   one:"바리깡처럼 가위질하는 긴 날을 차체 앞에, 차체보다 넓게 단 형태.",
+   how:"이빨 달린 칼날 두 장이 좌우로 왕복하며 밑동을 끊습니다. 끊긴 풀대는 갈리지 않고 통째로 눕습니다. 일의 양이 풀의 부피가 아니라 밑동 단면에 비례합니다.",
+   plus:["키 큰 풀을 밑동에서 한 번에 벱니다. 건초용 1 m 풀을 베는 기계들이 이 원리입니다.",
+         "날이 차체보다 넓어서 궤도는 이미 눕은 풀 위만 밟습니다. 장면에서 궤도 앞에 서 있는 풀이 없습니다.",
+         "가위질이라 작은 모터로 됩니다. 무게 목표와 가장 잘 맞습니다.",
+         "갈퀴질은 사람 몫 — 통째로 눕은 긴 풀대는 오히려 긁기 쉽습니다."],
+   minus:["돌을 물면 날 조각에 이가 나갑니다. 가장자리 돌무더기가 실제로 있습니다.",
+          "1 m 짜리 곧은 날을 차체에 고정하면 울퉁불퉁한 흙을 긁습니다. 왼쪽 ‘모어바 받침’을 썰매로 바꿔 계산표를 비교해 보세요.",
+          "썰매로 띄워도 날 가운데 밑의 둔덕은 못 피합니다 — 받침은 양 끝에만 있으니까요.",
+          "전폭 1.0 m — 1.03 m 틈은 3 cm 여유입니다."],
+   quote:"<b>9/19</b> “밑동부터 베면 몸이 앞으로 안 나가진다” — 서 있는 풀이 몸을 막아서입니다. 모어바는 몸보다 먼저, 몸보다 넓게 베니 막을 풀이 없습니다.",
+   emb:"크랭크 한 바퀴가 한 스트로크입니다. 부하가 스트로크마다 되풀이되니 “직전 스트로크와 비교”로 이상을 잡을 발판이 생깁니다. 가능성일 뿐 검증 전입니다.",
+   real:"건초 베는 보행형 트랙터의 모어바, 논둑용 바리깡식 예초기.",
+   s:[2,0,1,1,2,2],
+   why:["밑동을 한 번에, 풀대는 통째로 눕힘","돌을 물면 날에 이가 나감","고정하면 흙을 긁음 → 썰매 받침","전폭 1.0 m — 1.03 m 틈은 3 cm 여유","가위질이라 작은 모터","내려서 몰면 끝. 날은 철마다 갈기"]},
+
+  {id:"two", nm:"2단 절삭", kind:"궤도 차량 · 사람 흉내", col:"#3E8FA8",
+   one:"앞의 높은 드럼이 윗동을 쳐내고, 차체 밑 날이 밑동을 마무리.",
+   how:"9/19 에 손으로 하신 순서 — 위를 먼저, 아래를 나중 — 를 한 번 지나가며 합니다. 날마다 풀의 절반만 상대합니다.",
+   plus:["한 번 지나가면 끝납니다.",
+         "밑동 날이 차체 한가운데 밑에 있어, 차체가 기울어도 날 높이가 덜 흔들립니다 — 계산표에서 확인."],
+   minus:["날 두 벌, 모터 둘. 무게와 값이 둘 다 오릅니다.",
+          "높은 드럼이 무게중심을 올립니다. 설계실에서 고꾸라짐 각이 44.8° 로 떨어졌던 안입니다.",
+          "잘린 윗동 부스러기가 사방에 흩어집니다.",
+          "차체 밑 날도 궤도보다 좁으면 궤도 자리에 윗동만 잘린 풀이 눕습니다."],
+   quote:"<b>9/19</b> “위를 몇 번 베어야 아래를 벨 수 있다” — 그 몇 번을 한 번으로 접은 형태입니다.",
+   emb:"날 둘의 부하를 따로 봅니다. 윗날 급등은 나뭇가지, 아랫날 급등은 돌 — 센서 위치가 원인을 갈라 줍니다.",
+   real:"조합 안입니다(Claude 제안). 그대로 파는 물건은 모릅니다.",
+   s:[2,1,1,2,0,2],
+   why:["윗동·밑동을 한 번 지나가며","아랫날은 돌에 노출","밑동 날이 차체 가운데라 덜 흔들림","전폭 0.8 m — 틈 5곳 중 4곳","날 두 벌·모터 둘, 무게중심도 오름","내려서 몰면 끝"]},
+
+  {id:"cable", nm:"케이블 로봇", kind:"땅을 안 밟음", col:"#7A6BB0",
+   one:"네 귀퉁이 기둥에서 줄 넷이 머리 하나를 매달고 옮깁니다.",
+   how:"모터 넷이 줄을 감고 풀어 머리의 위치를 정합니다. 기계가 땅을 밟지 않으니 차체가 기울 일이 없습니다. 위에서 내려오니 사람처럼 윗동부터 층층이 벨 수도 있습니다.",
+   plus:["울퉁불퉁, 봉분, 경사가 차체를 흔들지 못합니다.",
+         "머리 자체는 가볍습니다."],
+   minus:["대신 머리가 땅 높이를 모릅니다. 높이를 고정하면 요철이 그대로 날 높이 흔들림이 됩니다 — 계산표에서 가장 크게 나오는 이유. 땅을 재는 센서가 따로 필요합니다.",
+          "이 땅엔 감나무가 있습니다. 장면에서 줄이 붉게 변하는 순간이 가지에 걸리는 순간입니다.",
+          "해마다 3 m 기둥 넷을 세우고 거둬야 합니다. 547 ㎡ 를 한 판에 덮으려면 기둥이 훨씬 높고 줄이 길어집니다.",
+          "나무 둘레는 머리가 못 들어가 사람 몫으로 남습니다."],
+   quote:null,
+   emb:"줄 길이 넷 → 머리 위치(역기구학), 줄이 늘어지지 않게 장력 제어, 여기에 땅 높이 센서까지. 제어 공부로는 가장 풍부합니다.",
+   real:"경기장 중계 카메라(스카이캠)가 같은 구조입니다.",
+   s:[1,1,2,0,1,0],
+   why:["위에서 층층이 — 사람처럼 여러 번","머리가 땅에 닿을 때만","차체는 안 흔들림. 땅 높이는 모름","감나무·봉분 위로 줄이 지나감","머리는 가볍지만 기둥 넷·줄","해마다 3 m 기둥 넷 세우고 거둠"]},
+
+  {id:"tether", nm:"말뚝 공전", kind:"줄에 매인 작은 차", col:"#B06B4A",
+   one:"말뚝에 줄을 매고 돕니다. 한 바퀴마다 줄이 말뚝에 감겨 저절로 나선을 그립니다.",
+   how:"설계식이 하나뿐입니다 — 말뚝 둘레 = 날 폭. 장면은 반지름 8 cm 말뚝(둘레 0.50 m)에 폭 0.54 m 날이라 빈틈 없이 덮습니다.",
+   plus:["위치 추정도, 경로 계획도 필요 없습니다. 가장 단순하고 쌉니다.",
+         "줄 장력 하나로 “걸렸다”를 압니다."],
+   minus:["원 안에 봉분·상석·나무가 있으면 나선이 깨집니다. 봉분이 두 줄로 늘어선 이 땅엔 원을 그릴 빈 평지가 적습니다.",
+          "차체가 작아(0.5 m) 요철 하나하나에 크게 기웁니다.",
+          "머리는 따로 골라야 합니다 — 키 큰 풀 문제는 그대로 남습니다."],
+   quote:null,
+   emb:"제어기가 거의 필요 없는 형태라, 오히려 “무엇을 빼도 되는가”를 보여주는 기준선입니다.",
+   real:"DIY 말뚝 잔디깎이가 이 원리입니다.",
+   s:[1,1,1,0,2,1],
+   why:["머리를 따로 골라야 — 문제는 그대로","머리에 따라","작은 차체라 요철마다 기움","원 안에 봉분·나무가 있으면 깨짐","위치 추정이 없어 가장 단순·쌈","말뚝을 옮겨 가며 여러 판"]},
+
+  {id:"resident", nm:"상주형 소형", kind:"자주 깎기 · 다른 시간표", col:"#4F8A5B",
+   one:"산소에 두고 봄부터 가을까지 자주 깎습니다. 풀이 10 cm 를 못 넘습니다.",
+   how:"형태가 아니라 시간표를 바꿉니다. 점선 상자가 1년 몰아 자랐을 때의 0.9 m 입니다. 그 높이까지 안 가게 하면 작은 날, 작은 모터, 태양광이면 됩니다.",
+   plus:["오늘 확인한 어려움(키 큰 풀, 여러 번)이 전부 풀 높이에서 나왔습니다. 그 원인을 없앱니다.",
+         "“몸이 그 자리에 없어도 된다”에 가장 가깝습니다. 사람은 1년에 한 번 봉분만.",
+         "10 kg 대라 무게 목표를 넉넉히 맞춥니다."],
+   minus:["보관·도난 — 이전에 이 안을 보류한 이유입니다.",
+          "고장 나면 1시간 거리입니다. 장마·한여름 성장기를 따라가는지도 모릅니다.",
+          "작은 바퀴에 낮은 날(3.5 cm)이라 흙땅 요철에서 흙을 자주 칩니다. 시중 잔디 로봇은 평탄한 잔디용입니다 — 계산표에서 확인."],
+   quote:"<b>9/19</b> 나무 밑은 풀이 작아서 금방 했다 — 풀이 작으면 일이 작다는 걸 현장이 이미 보여줬습니다.",
+   emb:"태양광 전력 관리, 잠자기, 원격 상태 보고(LTE/LoRa), 도난 감지, 워치독. 임베디드 과제로는 가장 넓습니다.",
+   real:"로봇 잔디깎이(경계선 방식·RTK 방식).",
+   s:[2,1,0,2,2,0],
+   why:["애초에 10 cm 를 못 넘게 함","작은 날, 작은 충격","작은 바퀴·낮은 날 → 흙을 자주 침","작아서 틈 대부분 통과","10 kg 대, 태양광","보관·도난·고장 나면 1시간 거리"]},
+];
+
+// ───────── 땅 — 울퉁불퉁 [추정] ─────────
+// 세 겹 값잡음: 파장 약 1.8 m · 0.65 m · 0.24 m. 크기 A 는 대략 가장 높은 곳.
+const T = {A:0.06};
+const TX = 8, TZ = 6;
+function hash2(i,j){
+  let h = (Math.imul(i,374761393) + Math.imul(j,668265263)) | 0;
+  h = Math.imul(h ^ (h>>>13), 1274126177);
+  h ^= h>>>16;
+  return (h>>>0)/4294967295*2 - 1;
+}
+function vnoise(x,z){
+  const i=Math.floor(x), j=Math.floor(z), fx=x-i, fz=z-j;
+  const u=fx*fx*(3-2*fx), v=fz*fz*(3-2*fz);
+  const a=hash2(i,j), b=hash2(i+1,j), c=hash2(i,j+1), d=hash2(i+1,j+1);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+function hgt(x,z){
+  if(T.A <= 0) return 0;
+  const e = Math.min(1, Math.max(0, TX-Math.abs(x)), Math.max(0, TZ-Math.abs(z)));
+  if(e <= 0) return 0;
+  const n = 0.5*vnoise(x/1.8+11.3, z/1.8-4.1) + 0.32*vnoise(x/0.65-2.7, z/0.65+8.8) + 0.18*vnoise(x/0.24+5.5, z/0.24+1.9);
+  return T.A * n / 0.62 * e*e*(3-2*e);
+}
+
+// ───────── 3D 바탕 ─────────
+const cv = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
+const cam = {az:2.35, el:0.5, r:6.5, tx:0, ty:0.3, tz:0};
+function placeCam(){
+  const cy = Math.cos(cam.el), sy = Math.sin(cam.el);
+  camera.position.set(cam.tx + cam.r*cy*Math.cos(cam.az), cam.ty + cam.r*sy, cam.tz + cam.r*cy*Math.sin(cam.az));
+  camera.lookAt(cam.tx, cam.ty, cam.tz);
+}
+scene.add(new THREE.HemisphereLight(0xdfe8dc, 0x2c3326, 0.8));
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.0);
+sun.position.set(-3.5, 7, 3); sun.castShadow = true;
+sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera, {left:-7,right:7,top:7,bottom:-7,near:0.5,far:26});
+scene.add(sun);
+
+const flat = new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:0x5e5440, roughness:1}));
+flat.rotation.x = -Math.PI/2; flat.position.y = -0.003; flat.receiveShadow = true; scene.add(flat);
+
+const gGeo = new THREE.PlaneGeometry(2*TX, 2*TZ, 256, 192); gGeo.rotateX(-Math.PI/2);
+gGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(gGeo.attributes.position.count*3), 3));
+const terrain = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({vertexColors:true, roughness:1}));
+terrain.receiveShadow = true; scene.add(terrain);
+function shapeGround(){
+  const p = gGeo.attributes.position, c = gGeo.attributes.color;
+  for(let k=0;k<p.count;k++){
+    const x=p.getX(k), z=p.getZ(k), y=hgt(x,z); p.setY(k,y);
+    const t = T.A > 0 ? Math.max(0, Math.min(1, 0.5 + 0.5*y/T.A)) : 0.5;   // 높은 곳이 마르고 밝다
+    const n = 0.03*vnoise(x*5.1, z*5.1);
+    c.setXYZ(k, 0.30+0.12*t+n, 0.25+0.09*t+n, 0.17+0.05*t+n);
+  }
+  p.needsUpdate = true; c.needsUpdate = true; gGeo.computeVertexNormals();
+}
+
+const gMach = new THREE.Group(); scene.add(gMach);
+const gProp = new THREE.Group(); scene.add(gProp);
+
+const mat = (c,o)=> new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:0.72, metalness:0.06}, o||{}));
+function box(w,h,d,c,x,y,z,o){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c,o));
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function cyl(r,h,c,x,y,z,axis,o){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,24), mat(c,o));
+  if(axis==="z") m.rotation.x = Math.PI/2;
+  if(axis==="x") m.rotation.z = Math.PI/2;
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function clear(g){
+  while(g.children.length){
+    const c = g.children.pop();
+    c.traverse(o=>{ if(o.geometry) o.geometry.dispose(); });
+  }
+}
+function human(x,z){
+  const g = new THREE.Group(), y0 = hgt(x,z);
+  g.add(cyl(0.16,0.80,0x5c6169,x,y0+0.40,z));
+  g.add(cyl(0.21,0.62,0x6d727a,x,y0+1.11,z));
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.115,18,14), mat(0x9a8b78));
+  h.position.set(x,y0+1.55,z); h.castShadow=true; g.add(h);
+  gProp.add(g);
+  return new THREE.Vector3(x,y0+1.78,z);
+}
+function rng(seed){
+  return function(){
+    seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed>>>15, 1 | seed);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+
+// ───────── 요철 위 자세 — 정지 상태의 기하 ─────────
+// 궤도: 길이 방향 단면의 위쪽 볼록껍질 가운데 변에 올라앉는다 (서스펜션 없는 강체 궤도).
+// 바퀴: 바퀴마다 반지름만큼 작은 요철을 넘는다. 네 바퀴 평균으로 앞뒤·좌우를 낸다 (근사).
+const CH_TRACK = {type:"track", hl:0.40, hw:0.325};
+const CH_WHEEL = {type:"wheel", hl:0.30, hw:0.33, r:0.13};
+function trackLine(px,pz,c,s,w,hl){
+  const N=17, H=[];
+  for(let k=0;k<N;k++){
+    const u=-hl+2*hl*k/(N-1), p=[u, hgt(px+u*c+w*s, pz-u*s+w*c)];
+    while(H.length>=2){
+      const a=H[H.length-2], b=H[H.length-1];
+      if((b[0]-a[0])*(p[1]-a[1]) - (b[1]-a[1])*(p[0]-a[0]) >= 0) H.pop(); else break;
+    }
+    H.push(p);
+  }
+  for(let k=0;k<H.length-1;k++){
+    const a=H[k], b=H[k+1];
+    if(a[0]<=0 && b[0]>=0){ const sl=(b[1]-a[1])/(b[0]-a[0]); return {h:a[1]-sl*a[0], sl}; }
+  }
+  return {h:H[0][1], sl:0};
+}
+function wheelH(px,pz,c,s,u,w,r){
+  let m=-1e9;
+  for(let k=-4;k<=4;k++){
+    const du=r*0.9*k/4, g=hgt(px+(u+du)*c+w*s, pz-(u+du)*s+w*c) + Math.sqrt(r*r-du*du) - r;
+    if(g>m) m=g;
+  }
+  return m;
+}
+function pose(px,pz,yaw,ch,o){
+  const c=Math.cos(yaw), s=Math.sin(yaw);
+  let hL,hR,pitch;
+  if(ch.type==="track"){
+    const L=trackLine(px,pz,c,s,ch.hw,ch.hl), R=trackLine(px,pz,c,s,-ch.hw,ch.hl);
+    hL=L.h; hR=R.h; pitch=Math.atan((L.sl+R.sl)/2);
+  } else {
+    const fl=wheelH(px,pz,c,s, ch.hl, ch.hw,ch.r), fr=wheelH(px,pz,c,s, ch.hl,-ch.hw,ch.r),
+          rl=wheelH(px,pz,c,s,-ch.hl, ch.hw,ch.r), rr=wheelH(px,pz,c,s,-ch.hl,-ch.hw,ch.r);
+    hL=(fl+rl)/2; hR=(fr+rr)/2; pitch=Math.atan(((fl+fr)-(rl+rr))/(4*ch.hl));
+  }
+  o.x=px; o.z=pz; o.yaw=yaw; o.y=(hL+hR)/2; o.pitch=pitch;
+  o.roll=-Math.atan((hL-hR)/(2*ch.hw));
+  o.tilt=Math.acos(Math.cos(o.pitch)*Math.cos(o.roll));
+  o.none=false;
+  return o;
+}
+const _eu = new THREE.Euler(0,0,0,"YZX");
+function poseMatrix(o,m){ _eu.set(o.roll,o.yaw,o.pitch,"YZX"); m.makeRotationFromEuler(_eu); m.setPosition(o.x,o.y,o.z); return m; }
+function applyPose(g,o){ g.position.set(o.x,o.y,o.z); g.rotation.set(o.roll,o.yaw,o.pitch,"YZX"); }
+const _w = new THREE.Vector3();
+// 차체 좌표의 한 점이 땅에서 얼마나 떠 있나
+function clearAt(m,lx,ly,lz){ _w.set(lx,ly,lz).applyMatrix4(m); return _w.y - hgt(_w.x,_w.z); }
+// 양 끝 썰매가 땅을 타는 모어바: 날 높이 = 두 썰매 사이 직선
+const SK = 0.52;
+function floatEnds(m,bx){
+  _w.set(bx,0, SK).applyMatrix4(m); const yP = hgt(_w.x,_w.z)+CUT;
+  _w.set(bx,0,-SK).applyMatrix4(m); const yM = hgt(_w.x,_w.z)+CUT;
+  return [yM,yP];
+}
+function floatBarClear(m,bx,w){
+  const [yM,yP] = floatEnds(m,bx);
+  _w.set(bx,CUT,w).applyMatrix4(m);
+  return yM + (yP-yM)*(w+SK)/(2*SK) - hgt(_w.x,_w.z);
+}
+
+// ───────── 풀 — 포기, 쑥대, 이삭, 깔린 마른 풀 ─────────
+// st: 0 서 있음 · 1 밑동이 잘려 누움 · 2 눌려 누움(안 잘림) · 3 갈려 없어짐
+function leafGeo(){
+  const S=6, pos=[], idx=[];
+  for(let k=0;k<=S;k++){ const t=k/S, w=0.5*(1-0.88*t), zz=0.2*t*t; pos.push(-w,t,zz, w,t,zz); }
+  for(let k=0;k<S;k++){ const a=2*k; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+const GEO = {
+  leaf: leafGeo(),
+  leafStub: new THREE.BoxGeometry(1,1,0.006).translate(0,0.5,0),
+  seed: new THREE.ConeGeometry(0.02,0.17,5).translate(0,0.085,0),
+  stalk: new THREE.BoxGeometry(1,1,1).translate(0,0.5,0),
+  crown: new THREE.IcosahedronGeometry(1,1).scale(0.11,0.3,0.11),
+};
+const matVeg = new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.95, side:THREE.DoubleSide});
+const _c = new THREE.Color();
+let VEG = [], thatchM = null, vegDirty = true;
+
+const SCALP_MAX = 900; let scalpN = 0;
+const scalpMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.04,0.05,0.012,7), mat(0x33241a,{roughness:1}), SCALP_MAX);
+scalpMesh.count = 0; scalpMesh.frustumCulled = false; scene.add(scalpMesh);
+
+function makeVeg(n,o){
+  const F=()=>new Float32Array(n);
+  const v = {n, x:F(),z:F(),gy:F(),yaw:F(),h0:F(),h:F(),tilt:F(),fd:F(),hs:F(),hs2:F(),sh:F(),sx:F(),
+             st:new Uint8Array(n), top:new Uint8Array(n), done:new Uint8Array(n), base:new Float32Array(n*3),
+             bend:o.bend, stiff:o.stiff, tipOff:o.tipOff||0};
+  v.mesh = new THREE.InstancedMesh(o.geo, matVeg, n);
+  v.stubM = new THREE.InstancedMesh(o.stubGeo, matVeg, n);
+  v.topM = o.topGeo ? new THREE.InstancedMesh(o.topGeo, matVeg, n) : null;
+  for(const mm of [v.mesh,v.stubM,v.topM]) if(mm){ mm.frustumCulled=false; mm.receiveShadow=true; scene.add(mm); }
+  return v;
+}
+
+// o: {shape, x0,x1,z0,z1 | r, avoid, seed, clumps, per, hm, leafW, seedFrac, mug, thatch}
+function buildField(o){
+  for(const v of VEG) for(const mm of [v.mesh,v.stubM,v.topM]) if(mm){ scene.remove(mm); if(mm.dispose) mm.dispose(); }
+  if(thatchM){ scene.remove(thatchM); if(thatchM.dispose) thatchM.dispose(); thatchM=null; }
+  VEG = []; scalpN = 0; scalpMesh.count = 0;
+  const R = rng(o.seed||7);
+  const disc = o.shape==="disc";
+  const x0 = disc?-o.r:o.x0, x1 = disc?o.r:o.x1, z0 = disc?-o.r:o.z0, z1 = disc?o.r:o.z1;
+  const area = (x1-x0)*(z1-z0);
+  const ok = (x,z)=> (!disc || x*x+z*z <= o.r*o.r) && !(o.avoid && o.avoid.some(a=>(x-a.x)*(x-a.x)+(z-a.z)*(z-a.z) < a.r*a.r));
+
+  // 볏과 포기: 한 점에서 부채꼴로 벌어진 잎 여러 장
+  const L = [];
+  const nClump = Math.round(area*o.clumps);
+  for(let k=0;k<nClump;k++){
+    const cx=x0+R()*(x1-x0), cz=z0+R()*(z1-z0); if(!ok(cx,cz)) continue;
+    const nb = o.per[0] + Math.floor(R()*(o.per[1]-o.per[0]+1));
+    for(let b=0;b<nb;b++){ const a=R()*Math.PI*2, r=0.04*R(); L.push(cx+Math.cos(a)*r, cz+Math.sin(a)*r, a); }
+  }
+  const g = makeVeg(L.length/3, {geo:GEO.leaf, stubGeo:GEO.leafStub, topGeo:o.seedFrac>0?GEO.seed:null, bend:true, stiff:false, tipOff:0});
+  for(let i=0;i<g.n;i++){
+    const a = L[3*i+2];
+    g.x[i]=L[3*i]; g.z[i]=L[3*i+1]; g.gy[i]=hgt(g.x[i],g.z[i]);
+    g.yaw[i]=Math.PI/2 - a + (R()-0.5)*0.5;
+    g.fd[i]=a; g.tilt[i]=0.08+0.32*R();
+    g.h0[i]=o.hm*(0.68+0.6*R()); g.h[i]=g.h0[i]*(o.startFrac||1);
+    g.sx[i]=o.leafW*(0.7+0.6*R());
+    g.hs[i]=R(); g.hs2[i]=R();
+    g.top[i]= R() < o.seedFrac ? 1 : 0;
+    if(R()<0.28) _c.setHSL(0.12+0.04*R(), 0.42, 0.40+0.12*R());       // 9월 — 끝이 누렇게
+    else _c.setHSL(0.21+0.07*R(), 0.36+0.2*R(), 0.22+0.15*R());
+    g.base[3*i]=_c.r; g.base[3*i+1]=_c.g; g.base[3*i+2]=_c.b;
+    g.mesh.setColorAt(i,_c);
+    _c.setHSL(0.15,0.30,0.38+0.08*R()); g.stubM.setColorAt(i,_c);
+    if(g.topM){ _c.setHSL(0.05+0.07*R(), 0.22+0.15*R(), 0.34+0.16*R()); g.topM.setColorAt(i,_c); }
+  }
+  VEG.push(g);
+
+  // 쑥: 목질 줄기 + 잿빛 잎 뭉치. 풀보다 키가 크고 뻣뻣하다.
+  const nm = Math.round(area*(o.mug||0));
+  const M = [];
+  for(let k=0;k<nm;k++){ const x=x0+R()*(x1-x0), z=z0+R()*(z1-z0); if(ok(x,z)) M.push(x,z); }
+  if(M.length){
+    const m = makeVeg(M.length/2, {geo:GEO.stalk, stubGeo:GEO.stalk, topGeo:GEO.crown, bend:false, stiff:true, tipOff:0.22});
+    for(let i=0;i<m.n;i++){
+      m.x[i]=M[2*i]; m.z[i]=M[2*i+1]; m.gy[i]=hgt(m.x[i],m.z[i]);
+      m.yaw[i]=R()*Math.PI; m.fd[i]=R()*Math.PI*2; m.tilt[i]=0.03+0.1*R();
+      m.h0[i]=1.0+0.4*R(); m.h[i]=m.h0[i];
+      m.sx[i]=0.012+0.008*R(); m.hs[i]=R(); m.hs2[i]=R(); m.top[i]=1;
+      _c.setHSL(0.2+0.04*R(), 0.16, 0.30+0.07*R());
+      m.base[3*i]=_c.r; m.base[3*i+1]=_c.g; m.base[3*i+2]=_c.b;
+      m.mesh.setColorAt(i,_c);
+      _c.setHSL(0.11,0.24,0.52); m.stubM.setColorAt(i,_c);
+      _c.setHSL(0.23+0.03*R(), 0.18, 0.44+0.08*R()); m.topM.setColorAt(i,_c);
+    }
+    VEG.push(m);
+  }
+
+  // 바닥에 깔린 작년 마른 풀 — 움직이지 않는 장식
+  const nt = Math.round(area*(o.thatch||0));
+  if(nt){
+    thatchM = new THREE.InstancedMesh(GEO.leaf, matVeg, nt); thatchM.frustumCulled=false; thatchM.receiveShadow=true;
+    let k=0;
+    for(let t=0;t<nt;t++){
+      const x=x0+R()*(x1-x0), z=z0+R()*(z1-z0); if(!ok(x,z)) continue;
+      const d=R()*Math.PI*2, h=0.25+0.4*R(), sx=0.025+0.015*R();
+      _qy.setFromAxisAngle(_Y, R()*Math.PI*2);
+      _ax.set(Math.sin(d),0,-Math.cos(d));
+      _q.setFromAxisAngle(_ax, 1.5).multiply(_qy);
+      _p.set(x, hgt(x,z)+0.004, z); _s.set(sx,h,h*0.3);
+      _m.compose(_p,_q,_s); thatchM.setMatrixAt(k,_m);
+      _c.setHSL(0.08+0.03*R(), 0.28, 0.30+0.14*R()); thatchM.setColorAt(k,_c);
+      k++;
+    }
+    thatchM.count = k; scene.add(thatchM);
+  }
+  vegDirty = true;
+}
+const TALL = o => Object.assign({clumps:13, per:[5,9], hm:GRASS_H, leafW:0.03, seedFrac:0.3, mug:2.5, thatch:30}, o);
+
+const _q=new THREE.Quaternion(), _qy=new THREE.Quaternion(), _ax=new THREE.Vector3(), _t=new THREE.Vector3(),
+      _m=new THREE.Matrix4(), _p=new THREE.Vector3(), _s=new THREE.Vector3(), _Y=new THREE.Vector3(0,1,0);
+function writeVeg(){
+  for(const v of VEG){
+    const tipZ = v.bend ? 0.2 : 0;
+    for(let i=0;i<v.n;i++){
+      const st=v.st[i], h = st===3 ? 1e-4 : v.h[i], d=v.fd[i], sx=v.sx[i];
+      _qy.setFromAxisAngle(_Y, v.yaw[i]);
+      _ax.set(Math.sin(d),0,-Math.cos(d));          // 쓰러지는 방향 (cos d, sin d) 의 수직축
+      _q.setFromAxisAngle(_ax, v.tilt[i]).multiply(_qy);
+      _p.set(v.x[i], v.gy[i], v.z[i]);
+      if(v.bend) _s.set(sx,h,h); else _s.set(sx,h,sx);
+      _m.compose(_p,_q,_s); v.mesh.setMatrixAt(i,_m);
+      const sh = (st===1||st===3) ? v.sh[i] : 1e-4;
+      if(v.bend) _s.set(sx,sh,1); else _s.set(sx*1.2,sh,sx*1.2);
+      _m.compose(_p,_qy,_s); v.stubM.setMatrixAt(i,_m);
+      if(v.topM){
+        const vis = v.top[i] && st!==3;
+        _t.set(0, Math.max(0,h-v.tipOff), tipZ*h).applyQuaternion(_q).add(_p);
+        _s.setScalar(vis?1:1e-4);
+        _m.compose(_t,_q,_s); v.topM.setMatrixAt(i,_m);
+      }
+    }
+    v.mesh.instanceMatrix.needsUpdate = true;
+    v.stubM.instanceMatrix.needsUpdate = true;
+    if(v.topM) v.topM.instanceMatrix.needsUpdate = true;
+  }
+  vegDirty = false;
+}
+function recolor(v,i,lying){
+  if(lying) _c.setHSL(0.10+0.03*v.hs2[i], 0.34, 0.46+0.1*v.hs[i]);
+  else _c.setRGB(v.base[3*i]*0.8, v.base[3*i+1]*0.8, v.base[3*i+2]*0.75);
+  v.mesh.setColorAt(i,_c); v.mesh.instanceColor.needsUpdate = true;
+}
+function fell(v,i,dir,spread){ v.st[i]=1; v.tilt[i]=1.44+0.1*v.hs2[i]; v.fd[i]=dir+(v.hs[i]-0.5)*spread; recolor(v,i,true); vegDirty=true; }
+function press(v,i,dir,amount){ v.st[i]=2; v.tilt[i]=amount; v.fd[i]=dir+(v.hs2[i]-0.5)*0.6; recolor(v,i,false); vegDirty=true; }
+function mulch(v,i){ v.st[i]=3; vegDirty=true; }
+function scalp(x,z){
+  if(scalpN>=SCALP_MAX) return;
+  _m.makeTranslation(x, hgt(x,z)+0.004, z);
+  scalpMesh.setMatrixAt(scalpN++, _m); scalpMesh.count = scalpN; scalpMesh.instanceMatrix.needsUpdate = true;
+}
+// 잘린 자리의 그루터기 = 그 순간의 날–땅 간격. 음수면 날이 흙을 친 것.
+function cutStub(v,i,clr){
+  if(clr < 0){ v.sh[i]=0.006; if(!(v.done[i]&2) && v.hs2[i]<0.45){ v.done[i]|=2; scalp(v.x[i],v.z[i]); } }
+  else v.sh[i]=Math.min(0.3, clr);
+  v.done[i]|=1; vegDirty=true;
+}
+
+// ───────── 계기 ─────────
+const M = {pitch:0, roll:0, clear:0, none:false, series:[], acc:0};
+function resetMeter(){ M.series.length=0; M.acc=0; }
+function meter(dt,po,mn){
+  M.pitch=po.pitch; M.roll=po.roll; M.none=po.none; M.clear=mn;
+  M.acc+=dt;
+  if(M.acc>=0.05){ M.acc=0; M.series.push(mn); if(M.series.length>160) M.series.shift(); }
+}
+const NOPOSE = {pitch:0, roll:0, tilt:0, none:true};
+
+// ───────── 궤도·바퀴 차량 ─────────
+const V = {len:0.8, wid:0.5, trk:0.15, th:0.12, bodyH:0.18};
+const OPT = {wheels:false, float:false};
+const HEAD = {rotary:{cx:0.72, half:0.275}, bar:{cx:0.65, half:0.5}, two:{cx:0, half:0.3}};
+function vehicle(ch){
+  const g = new THREE.Group();
+  g.add(box(V.len, V.bodyH, V.wid, 0xC9563F, 0, V.th+V.bodyH/2, 0));
+  if(ch.type==="track"){
+    for(const s of [1,-1]){
+      const z = s*(V.wid+V.trk)/2;
+      g.add(box(V.len-V.th, V.th, V.trk, 0x2a2e2b, 0, V.th/2, z));
+      for(const ex of [1,-1]) g.add(cyl(V.th/2, V.trk, 0x2a2e2b, ex*(V.len-V.th)/2, V.th/2, z, "z"));
+    }
+  } else {
+    for(const u of [ch.hl,-ch.hl]) for(const s of [1,-1]){
+      g.add(cyl(ch.r, 0.1, 0x2a2e2b, u, ch.r, s*ch.hw, "z"));
+      g.add(cyl(0.045, 0.104, 0x8a9096, u, ch.r, s*ch.hw, "z"));
+    }
+  }
+  const top = V.th+V.bodyH;
+  g.add(cyl(0.006, 0.34, 0x30353a, -0.3, top+0.17, 0.16));
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.018,10,8), mat(0x0E7C8C));
+  tip.position.set(-0.3, top+0.35, 0.16); g.add(tip);
+  return g;
+}
+
+const LANE = {x0:-4.9, x1:5.6, v:0.5};
+const PO = {}, _mv = new THREE.Matrix4(), _inv = new THREE.Matrix4(), _l = new THREE.Vector3();
+
+function vehicleForm(kind){
+  let S = null;
+  const f = {
+    cam:{az:2.35, el:0.5, r:6.4, ty:0.3},
+    rest:10.5, drive:true,
+    init(){
+      buildField(TALL({shape:"rect", x0:-4.2, x1:5.2, z0:-1.6, z1:1.6, seed:11}));
+      clear(gMach); clear(gProp); resetMeter();
+      const ch = OPT.wheels ? CH_WHEEL : CH_TRACK;
+      const v = vehicle(ch); gMach.add(v);
+      S = {X:LANE.x0, hold:0, wrap:0, v, ch, hd:HEAD[kind], float: kind==="bar" && OPT.float};
+      const H = human(0.6,-2.45);
+      f.tags = [
+        {t:"사람 1.7 m", p:()=>H},
+        {t:"풀 포기·쑥대 0.6~1.4 m", p:()=>new THREE.Vector3(4.4,1.2,1.2)},
+      ];
+      if(kind==="rotary"){
+        const hx = S.hd.cx;
+        for(const s of [1,-1]) v.add(box(0.3,0.03,0.03,0x3f4640, V.len/2+0.12, 0.16, s*0.1));
+        v.add(cyl(0.05,0.12,0x30353a,hx,0.13,0));
+        v.add(cyl(0.275,0.02,0xD8B23C,hx,CUT+0.012,0));
+        const sp = new THREE.Group(); sp.position.set(hx,CUT,0);
+        sp.add(box(0.6,0.006,0.012,0xE8712C,0,0,0)); v.add(sp);
+        const wrap = cyl(1,0.07,0x6f8f45,hx,0.1,0,null,{roughness:1});
+        wrap.scale.set(0.04,1,0.04); v.add(wrap);
+        S.sp=sp; S.wrapM=wrap;
+        f.tags.push({t:"날에 감긴 풀", warn:true, p:()=>new THREE.Vector3(S.X+hx,PO.y+0.32,0), on:()=>S.wrap>6});
+        f.tags.push({t:"궤도가 눕힌 풀 — 안 잘림", p:()=>new THREE.Vector3(S.X-1.3,0.2,0.36), on:()=>S.X>-2.4});
+      }
+      if(kind==="bar"){
+        for(const s of [1,-1]){
+          const a = box(0.26,0.03,0.04,0x3f4640, V.len/2+0.1, 0.13, s*0.18); a.rotation.z=-0.45; v.add(a);
+        }
+        const bg = new THREE.Group();
+        bg.add(box(0.07,0.022,1.0,0x6E7780, 0, 0, 0));
+        for(let z=-0.475; z<=0.48; z+=0.076){
+          const c = new THREE.Mesh(new THREE.ConeGeometry(0.02,0.075,4), mat(0x9aa3ab,{metalness:0.4}));
+          c.rotation.z=-Math.PI/2; c.position.set(0.06,0.002,z); c.castShadow=true; bg.add(c);
+        }
+        const knife = box(0.05,0.008,0.96,0xc7ccd1, 0.01, 0.016, 0, {metalness:0.5}); bg.add(knife);
+        for(const s of [1,-1]) bg.add(box(0.26,0.035,0.05,0x5a6168, -0.02, -CUT+0.018, s*SK));   // 썰매 받침
+        bg.add(box(0.13,0.1,0.1,0x30353a, -0.03, 0.05, -0.57));   // 크랭크 상자
+        v.add(bg);
+        S.bg=bg; S.knife=knife;
+        f.tags.push({t: S.float ? "썰매가 땅을 타는 모어바 1.0 m" : "차체에 고정한 모어바 1.0 m", p:()=>new THREE.Vector3(S.X+S.hd.cx,PO.y+0.18,-0.5)});
+        f.tags.push({t:"통째로 눕은 풀대 → 갈퀴는 사람", p:()=>new THREE.Vector3(S.X-1.4,0.16,0), on:()=>S.X>-2.4});
+      }
+      if(kind==="two"){
+        const dx = 0.72, dy = 0.52;
+        for(const s of [1,-1]){
+          const a = box(0.44,0.04,0.04,0x3f4640, (0.35+dx)/2, (V.th+V.bodyH+dy)/2, s*0.38);
+          a.rotation.z = Math.atan2(dy-(V.th+V.bodyH), dx-0.35); v.add(a);
+        }
+        const dr = new THREE.Group(); dr.position.set(dx,dy,0);
+        dr.add(cyl(0.07,0.72,0x3E8FA8,0,0,0,"z"));
+        for(let k=0;k<6;k++){
+          const a = k*Math.PI/3, fl = box(0.06,0.014,0.1,0x9aa3ab,Math.cos(a)*0.09,Math.sin(a)*0.09,(k-2.5)*0.12);
+          fl.rotation.z = a; dr.add(fl);
+        }
+        v.add(dr);
+        v.add(cyl(0.3,0.03,0x4a5048,0,CUT+0.025,0));
+        const sp = new THREE.Group(); sp.position.set(0,CUT,0);
+        sp.add(box(0.58,0.006,0.02,0xE8712C,0,0,0)); v.add(sp);
+        S.dr=dr; S.sp=sp;
+        f.tags.push({t:"윗동을 0.45 m 에서", p:()=>new THREE.Vector3(S.X+dx,PO.y+0.74,0.3)});
+        f.tags.push({t:"밑동 날은 차체 한가운데 밑", p:()=>new THREE.Vector3(S.X,PO.y+0.42,-0.1)});
+      }
+      f.update(0);
+    },
+    update(dt){
+      pose(S.X, 0, 0, S.ch, PO); applyPose(S.v, PO); poseMatrix(PO, _mv);
+      if(S.bg){
+        if(S.float){
+          // 썰매 두 개가 짚은 땅 높이를 차체 좌표로 옮겨 날을 그 사이에 건다
+          const [yM,yP] = floatEnds(_mv, S.hd.cx);
+          _inv.copy(_mv).invert();
+          _w.set(S.hd.cx,0,-SK).applyMatrix4(_mv); const eM = new THREE.Vector3(_w.x,yM,_w.z).applyMatrix4(_inv);
+          _w.set(S.hd.cx,0, SK).applyMatrix4(_mv); const eP = new THREE.Vector3(_w.x,yP,_w.z).applyMatrix4(_inv);
+          S.bg.position.set(S.hd.cx, (eP.y+eM.y)/2, 0);
+          S.bg.rotation.set(-Math.asin(Math.max(-1,Math.min(1,(eP.y-eM.y)/(2*SK)))), 0, 0);
+        } else { S.bg.position.set(S.hd.cx, CUT, 0); S.bg.rotation.set(0,0,0); }
+      }
+      let mn = 1e9;
+      for(let k=0;k<5;k++){ const w=S.hd.half*(k/2-1), c=clr(w, S.hd.cx); if(c<mn) mn=c; }
+      meter(dt, PO, mn);
+    },
+    step(dt){
+      if(S.X < LANE.x1){ S.X += LANE.v*dt; f.update(dt); cut(); }
+      else if((S.hold+=dt) > 1.6){ f.init(); return; }
+      if(S.sp) S.sp.rotation.y += dt*40;
+      if(S.dr) S.dr.rotation.z -= dt*22;
+      if(S.knife) S.knife.position.z = Math.sin(performance.now()*0.04)*0.038;
+      if(S.wrapM){ const r = Math.min(0.2, 0.04+S.wrap*0.0016); S.wrapM.scale.set(r,1,r); }
+      cam.tx += (Math.max(-2.6,Math.min(3.8,S.X+0.5)) - cam.tx)*Math.min(1,dt*3);
+    }
+  };
+  // 차체 좌표 (lx, ·, lz) 에서 날–땅 간격
+  function clr(lz,lx){ return S.float ? floatBarClear(_mv, S.hd.cx, lz) : clearAt(_mv, lx, CUT, lz); }
+  function cut(){
+    const X = S.X, front = X+V.len/2+0.03;
+    for(const v of VEG) for(let i=0;i<v.n;i++){
+      const st = v.st[i]; if(st===1||st===3) continue;
+      const x = v.x[i], z = v.z[i], az = Math.abs(z);
+      if(kind==="rotary"){
+        const dx = x-(X+S.hd.cx);
+        if(dx*dx+z*z < 0.275*0.275){
+          cutStub(v,i,clr(z, x-X));
+          if(v.hs[i]<0.3){ mulch(v,i); S.wrap++; } else fell(v,i, v.hs2[i]*Math.PI*2, 1.0);
+          continue;
+        }
+      } else if(kind==="bar"){
+        if(Math.abs(x-(X+S.hd.cx)) < 0.045 && az < 0.5){ cutStub(v,i,clr(z, S.hd.cx)); fell(v,i,Math.PI,0.9); continue; }
+      } else if(kind==="two"){
+        if(st===0 && Math.abs(x-(X+0.72)) < 0.07 && az < 0.36 && v.h[i] > 0.46){
+          v.h[i] = 0.42+0.05*v.hs2[i]; v.top[i] = 0; vegDirty = true;
+        }
+        const dx = x-X;
+        if(dx*dx+z*z < 0.3*0.3 && v.hs[i] < 0.93){ cutStub(v,i,clr(z,dx)); mulch(v,i); continue; }
+      }
+      if(st===0 && x < front && x > X-V.len/2 && az < 0.43){
+        press(v,i,0, v.stiff ? 0.5+0.2*v.hs2[i] : (v.h[i] > 0.5 ? 1.05+0.3*v.hs2[i] : 0.6+0.3*v.hs2[i]));
+      } else if(st===2 && v.stiff && x < X-0.55 && v.tilt[i] > 0.4){
+        v.tilt[i] = 0.2+0.12*v.hs2[i]; vegDirty = true;       // 뻣뻣한 쑥대는 다시 일어선다 (그림)
+      }
+    }
+  }
+  return f;
+}
+
+// ───────── 케이블 로봇 ─────────
+const CABLE_Y = 0.07;   // 머리 높이 — 땅을 모르니 고정
+function cablePath(TREE){
+  const path = [];
+  for(let r=0;r<8;r++){
+    const z = -1.75 + r*0.5, xs = r%2 ? [2.65,-2.65] : [-2.65,2.65];
+    for(let k=0;k<=40;k++){
+      let x = xs[0]+(xs[1]-xs[0])*k/40, zz=z;
+      const dx=x-TREE.x, dz=zz-TREE.z, d=Math.hypot(dx,dz);
+      if(d<0.62){ x=TREE.x+dx/(d||1)*0.62; zz=TREE.z+dz/(d||1)*0.62; }
+      path.push([x,zz]);
+    }
+  }
+  const acc=[0];
+  for(let k=1;k<path.length;k++) acc.push(acc[k-1]+Math.hypot(path[k][0]-path[k-1][0], path[k][1]-path[k-1][1]));
+  return {path, acc};
+}
+function pathAt(P,s){
+  let k=1; while(k<P.acc.length-1 && P.acc[k] < s) k++;
+  const a=P.acc[k-1], b=P.acc[k], u = b>a ? Math.min(1,(s-a)/(b-a)) : 0;
+  return [P.path[k-1][0]+(P.path[k][0]-P.path[k-1][0])*u, P.path[k-1][1]+(P.path[k][1]-P.path[k-1][1])*u];
+}
+const TREE = {x:1.3, z:0.9, cy:2.3, R:1.1};
+function cableForm(){
+  let S=null;
+  const POLES = [[-3.3,-2.3],[3.3,-2.3],[3.3,2.3],[-3.3,2.3]], PH = 2.6;
+  const matC = mat(0x2b2f33), matR = mat(0xD8412E,{emissive:0x5a1208});
+  const f = {
+    cam:{az:2.25, el:0.62, r:11.5, tx:0, ty:0.7, tz:0},
+    rest:14, drive:false,
+    init(){
+      buildField(TALL({shape:"rect", x0:-2.9, x1:2.9, z0:-1.95, z1:1.95, seed:23, avoid:[{x:TREE.x, z:TREE.z, r:0.32}]}));
+      clear(gMach); clear(gProp); resetMeter();
+      for(const [x,z] of POLES){ const y0=hgt(x,z); gProp.add(cyl(0.05,PH-y0,0x4a4f55,x,(PH+y0)/2,z)); gProp.add(cyl(0.08,0.06,0x2b2f33,x,PH,z)); }
+      const ty0 = hgt(TREE.x,TREE.z);
+      gProp.add(cyl(0.13,1.8,0x5b4636,TREE.x,ty0+0.9,TREE.z));
+      const can = new THREE.Mesh(new THREE.SphereGeometry(TREE.R,24,16), mat(0x3f6b35,{transparent:true,opacity:0.72,roughness:1}));
+      can.position.set(TREE.x,TREE.cy,TREE.z); can.scale.y=0.8; gProp.add(can);
+      const H = human(-4.3,-0.6);
+      const hd = new THREE.Group();
+      hd.add(box(0.22,0.18,0.22,0x7A6BB0,0,0.36,0));
+      hd.add(cyl(0.02,0.24,0x30353a,0,0.17,0));
+      hd.add(cyl(0.26,0.02,0xD8B23C,0,0.06,0));
+      const sp = new THREE.Group(); sp.position.y=0.05; sp.add(box(0.56,0.006,0.012,0xE8712C,0,0,0)); hd.add(sp);
+      gMach.add(hd);
+      const cables = POLES.map(()=>{
+        const g = new THREE.CylinderGeometry(0.013,0.013,1,6); g.translate(0,0.5,0);
+        const m = new THREE.Mesh(g, matC); gMach.add(m); return m;
+      });
+      const P = cablePath(TREE);
+      S = {t:0, s:0, hd, sp, cables, P, blocked:false, hx:P.path[0][0], hz:P.path[0][1], cy:1.2, done:0};
+      f.tags = [
+        {t:"사람 1.7 m", p:()=>H},
+        {t:"기둥 2.6 m", p:()=>new THREE.Vector3(POLES[0][0],PH+0.12,POLES[0][1])},
+        {t:"감나무 가지에 걸린 줄", warn:true, p:()=>new THREE.Vector3(TREE.x,TREE.cy+0.95,TREE.z), on:()=>S.blocked},
+        {t:"머리 높이 고정 — 땅을 모른다", p:()=>new THREE.Vector3(S.hx,S.cy+0.5,S.hz), on:()=>S.t>1.6},
+      ];
+      place(); meter(0, NOPOSE, 0.1);
+    },
+    step(dt){
+      S.t += dt;
+      const total = S.P.acc[S.P.acc.length-1];
+      if(S.t < 1.6){ S.cy = 1.2 - (S.t/1.6)*(1.2-CABLE_Y); }
+      else if(S.s < total){ S.s += 1.5*dt; S.cy = CABLE_Y; }
+      else if((S.done+=dt) > 1.6){ f.init(); return; }
+      [S.hx, S.hz] = pathAt(S.P, S.s);
+      S.sp.rotation.y += dt*40;
+      let mn = 1e9;
+      for(let k=0;k<5;k++){ const w=0.26*(k/2-1), c=S.cy-hgt(S.hx,S.hz+w); if(c<mn) mn=c; }
+      if(S.cy <= CABLE_Y+0.005){
+        meter(dt, NOPOSE, mn);
+        for(const v of VEG) for(let i=0;i<v.n;i++){
+          if(v.st[i]===3) continue;
+          const dx=v.x[i]-S.hx, dz=v.z[i]-S.hz;
+          if(dx*dx+dz*dz < 0.27*0.27){ cutStub(v,i,S.cy-v.gy[i]); mulch(v,i); }
+        }
+      }
+      place();
+    }
+  };
+  const _A=new THREE.Vector3(), _B=new THREE.Vector3(), _D=new THREE.Vector3(), _C=new THREE.Vector3(), _E=new THREE.Vector3();
+  function place(){
+    S.hd.position.set(S.hx, S.cy-0.06, S.hz);
+    _B.set(S.hx, S.cy+0.39, S.hz);
+    _C.set(TREE.x, TREE.cy, TREE.z);
+    S.blocked = false;
+    S.cables.forEach((m,j)=>{
+      _A.set(POLES[j][0], PH, POLES[j][1]);
+      _D.subVectors(_B,_A); const L=_D.length(); _D.divideScalar(L);
+      m.position.copy(_A); m.quaternion.setFromUnitVectors(_Y,_D); m.scale.set(1,L,1);
+      const tt = Math.max(0, Math.min(L, _E.subVectors(_C,_A).dot(_D)));
+      const hit = _E.copy(_A).addScaledVector(_D,tt).distanceTo(_C) < TREE.R*0.92;
+      m.material = hit ? matR : matC; if(hit) S.blocked = true;
+    });
+  }
+  return f;
+}
+
+// ───────── 말뚝 공전 ─────────
+const TETH = {RS:0.08, L0:3.4, LMIN:0.5, CUTR:0.27, VEL:2.0, ch:{type:"track", hl:0.25, hw:0.21}};
+function tetherPose(th,o){
+  const L = Math.max(TETH.LMIN, TETH.L0 - TETH.RS*th), c=Math.cos(th), s=Math.sin(th);
+  return pose(L*c, L*s, Math.atan2(-c,-s), TETH.ch, o);     // 진행 방향 (−sinθ, cosθ)
+}
+function tetherForm(){
+  let S=null;
+  const {RS,L0,LMIN,CUTR,VEL} = TETH;
+  const f = {
+    cam:{az:2.3, el:0.82, r:10.5, tx:0, ty:0, tz:0},
+    rest:13, drive:false,
+    init(){
+      buildField(TALL({shape:"disc", r:3.75, seed:31, avoid:[{x:0,z:0,r:0.16}]}));
+      clear(gMach); clear(gProp); resetMeter();
+      const y0 = hgt(0,0);
+      gProp.add(cyl(RS,0.55,0x6b5236,0,y0+0.275,0));
+      const coil = cyl(RS+0.014,1,0xd9c9a0,0,y0,0); coil.scale.y=0.001; gProp.add(coil);
+      const pts=[];
+      for(let th=0; L0-RS*th > LMIN; th+=0.05){ const L=L0-RS*th, x=L*Math.cos(th), z=L*Math.sin(th); pts.push(new THREE.Vector3(x,hgt(x,z)+0.012,z)); }
+      gProp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0x0E7C8C, transparent:true, opacity:0.55})));
+      const H = human(4.5,-1.3);
+      const u = new THREE.Group();
+      u.add(box(0.5,0.13,0.34,0xB06B4A,0,0.155,0));
+      for(const s of [1,-1]) u.add(box(0.5,0.09,0.08,0x2a2e2b,0,0.045,s*0.21));
+      u.add(cyl(0.27,0.018,0xD8B23C,0.05,CUT+0.01,0));
+      const sp = new THREE.Group(); sp.position.set(0.05,CUT,0); sp.add(box(0.54,0.006,0.012,0xE8712C,0,0,0)); u.add(sp);
+      gMach.add(u);
+      const rg = new THREE.CylinderGeometry(0.008,0.008,1,5); rg.translate(0,0.5,0);
+      const rope = new THREE.Mesh(rg, mat(0xe9dcb8)); gMach.add(rope);
+      S = {th:0, u, sp, rope, coil, y0, done:0};
+      f.tags = [
+        {t:"사람 1.7 m", p:()=>H},
+        {t:"말뚝 둘레 0.50 m = 날 폭", p:()=>new THREE.Vector3(0,y0+0.62,0)},
+        {t:"작은 차체 0.5 m — 요철마다 기움", p:()=>new THREE.Vector3(PO.x,PO.y+0.42,PO.z)},
+      ];
+      f.update(0);
+    },
+    update(dt){
+      tetherPose(S.th, PO); applyPose(S.u, PO); poseMatrix(PO, _mv);
+      const c=Math.cos(S.th), s=Math.sin(S.th);
+      const A = new THREE.Vector3(-s*RS, S.y0+0.22, c*RS), D = new THREE.Vector3(PO.x, PO.y+0.18, PO.z).sub(A);
+      const len = D.length(); D.divideScalar(len);
+      S.rope.position.copy(A); S.rope.quaternion.setFromUnitVectors(_Y,D); S.rope.scale.set(1,len,1);
+      const hh = Math.min(0.4, 0.004 + S.th/(2*Math.PI)*0.03);
+      S.coil.scale.y = hh; S.coil.position.y = S.y0+0.05+hh/2;
+      let mn = 1e9;
+      for(let k=0;k<5;k++){ const cc=clearAt(_mv, 0.05, CUT, CUTR*(k/2-1)); if(cc<mn) mn=cc; }
+      meter(dt, PO, mn);
+    },
+    step(dt){
+      if(L0 - RS*S.th > LMIN){ S.th += VEL/(L0-RS*S.th)*dt; }
+      else if((S.done+=dt) > 1.8){ f.init(); return; }
+      f.update(dt);
+      S.sp.rotation.y += dt*40;
+      _inv.copy(_mv).invert();
+      for(const v of VEG) for(let i=0;i<v.n;i++){
+        if(v.st[i]===3) continue;
+        const dx=v.x[i]-PO.x, dz=v.z[i]-PO.z; if(dx*dx+dz*dz > 0.16) continue;
+        _l.set(v.x[i], v.gy[i], v.z[i]).applyMatrix4(_inv);
+        const ux=_l.x-0.05, uz=_l.z;
+        if(ux*ux+uz*uz < CUTR*CUTR){ cutStub(v,i,clearAt(_mv,_l.x,CUT,_l.z)); mulch(v,i); }
+      }
+    }
+  };
+  return f;
+}
+
+// ───────── 상주형 소형 ─────────
+const RES = {B:{x0:-3,x1:3,z0:-2,z1:2}, CUTR:0.17, VEL:0.55, REGROW:0.0016, H:0.035, ch:{type:"wheel", hl:0.14, hw:0.17, r:0.06}};
+function resWalk(S,dt){
+  const B = RES.B;
+  const nx = S.x + Math.cos(S.a)*RES.VEL*dt, nz = S.z + Math.sin(S.a)*RES.VEL*dt;
+  if(nx<B.x0+0.2||nx>B.x1-0.2||nz<B.z0+0.2||nz>B.z1-0.2){
+    S.a = Math.atan2(-S.z, -S.x) + (S.R()-0.5)*2.2;      // 경계에 닿으면 안쪽 아무 방향으로
+  } else { S.x=nx; S.z=nz; }
+}
+function residentForm(){
+  let S=null;
+  const B = RES.B;
+  const f = {
+    cam:{az:2.25, el:0.6, r:8.8, tx:0, ty:0.25, tz:0},
+    rest:38, drive:false,
+    init(){
+      buildField({shape:"rect", x0:B.x0, x1:B.x1, z0:B.z0, z1:B.z1, seed:41, clumps:26, per:[4,7], hm:0.12, leafW:0.013, seedFrac:0, mug:0, thatch:0, startFrac:0.95});
+      clear(gMach); clear(gProp); resetMeter();
+      const eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(6,GRASS_H,4));
+      const ghost = new THREE.LineSegments(eg, new THREE.LineDashedMaterial({color:0x5A8F3C, dashSize:0.12, gapSize:0.08}));
+      ghost.computeLineDistances(); ghost.position.y = GRASS_H/2; gProp.add(ghost);
+      const lid = new THREE.Mesh(new THREE.PlaneGeometry(6,4), new THREE.MeshBasicMaterial({color:0x5A8F3C, transparent:true, opacity:0.07, side:THREE.DoubleSide, depthWrite:false}));
+      lid.rotation.x=-Math.PI/2; lid.position.y=GRASS_H; gProp.add(lid);
+      const dx=-3.45, dz=1.4, dy=hgt(dx,dz);
+      gProp.add(box(0.5,0.03,0.45,0x3a3f44,dx,dy+0.015,dz));
+      gProp.add(cyl(0.03,1.2,0x4a4f55,dx-0.18,dy+0.6,dz));
+      const pv = box(0.55,0.025,0.4,0x1f3a5c,dx-0.18,dy+1.22,dz,{metalness:0.3,roughness:0.4}); pv.rotation.z=0.5; gProp.add(pv);
+      const H = human(3.8,-2.7);
+      const r = new THREE.Group();
+      r.add(box(0.36,0.07,0.28,0x2f3438,0,0.075,0));
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.2,20,12,0,Math.PI*2,0,Math.PI/2), mat(0x4F8A5B));
+      dome.scale.set(1.0,0.45,0.78); dome.position.y=0.11; dome.castShadow=true; r.add(dome);
+      for(const u of [0.14,-0.14]) for(const s of [1,-1]) r.add(cyl(0.06,0.035,0x1c1f22,u,0.06,s*0.17,"z"));
+      gMach.add(r);
+      S = {x:-2.8, z:1.4, a:-0.4, r, R:rng(5)};
+      f.tags = [
+        {t:"사람 1.7 m", p:()=>H},
+        {t:"1년 몰아 자라면 0.9 m", p:()=>new THREE.Vector3(3,GRASS_H+0.04,-2)},
+        {t:"풀 10 cm 안팎, 날은 3.5 cm", p:()=>new THREE.Vector3(1.6,0.24,1.7)},
+        {t:"충전대 · 태양광", p:()=>new THREE.Vector3(dx-0.18,dy+1.5,dz)},
+      ];
+      f.update(0);
+    },
+    update(dt){
+      pose(S.x, S.z, -S.a, RES.ch, PO); applyPose(S.r, PO); poseMatrix(PO, _mv);
+      let mn = 1e9;
+      for(let k=0;k<5;k++){ const c=clearAt(_mv, 0, RES.H, RES.CUTR*(k/2-1)); if(c<mn) mn=c; }
+      meter(dt, PO, mn);
+    },
+    step(dt){
+      resWalk(S,dt);
+      f.update(dt);
+      _inv.copy(_mv).invert();
+      for(const v of VEG) for(let i=0;i<v.n;i++){
+        const dx=v.x[i]-S.x, dz=v.z[i]-S.z;
+        if(dx*dx+dz*dz < RES.CUTR*RES.CUTR){
+          _l.set(v.x[i], v.gy[i], v.z[i]).applyMatrix4(_inv);
+          const c = clearAt(_mv, _l.x, RES.H, _l.z);
+          if(c < v.h[i]){
+            v.h[i] = Math.max(0.006, c);
+            if(c < 0 && !(v.done[i]&2) && v.hs2[i]<0.35){ v.done[i]|=2; scalp(v.x[i],v.z[i]); }
+          }
+        } else if(v.h[i] < v.h0[i]) v.h[i] += RES.REGROW*dt;
+      }
+      vegDirty = true;
+    }
+  };
+  return f;
+}
+
+const ENGINES = {
+  rotary: vehicleForm("rotary"), bar: vehicleForm("bar"), two: vehicleForm("two"),
+  cable: cableForm(), tether: tetherForm(), resident: residentForm(),
+};
+
+// ───────── 계산표 — 풀 없이, 같은 땅 위로 날만 지나가게 해서 ─────────
+const ROWS = [
+  {id:"rotary", wheels:false, nm:"앞 회전날 · 궤도"},
+  {id:"rotary", wheels:true,  nm:"앞 회전날 · 바퀴"},
+  {id:"bar", wheels:false, float:false, nm:"앞 모어바 · 궤도 · 고정"},
+  {id:"bar", wheels:false, float:true,  nm:"앞 모어바 · 궤도 · 썰매"},
+  {id:"bar", wheels:true,  float:false, nm:"앞 모어바 · 바퀴 · 고정"},
+  {id:"bar", wheels:true,  float:true,  nm:"앞 모어바 · 바퀴 · 썰매"},
+  {id:"two", wheels:false, nm:"2단 절삭 · 궤도"},
+  {id:"two", wheels:true,  nm:"2단 절삭 · 바퀴"},
+  {id:"cable",    nm:"케이블 · 머리 높이 고정"},
+  {id:"tether",   nm:"말뚝 공전 · 작은 궤도"},
+  {id:"resident", nm:"상주형 · 작은 바퀴"},
+];
+function stats(row){
+  const cl=[]; let tmax=0, none=false;
+  const push=(t,c)=>{ if(t>tmax) tmax=t; cl.push(c); };
+  const o={}, m=new THREE.Matrix4();
+  if(row.id==="rotary"||row.id==="bar"||row.id==="two"){
+    const ch = row.wheels ? CH_WHEEL : CH_TRACK, hd = HEAD[row.id], fl = row.id==="bar" && row.float;
+    for(const lz of [-1.2,-0.4,0.4,1.2]) for(let X=-4.5; X<=4.5; X+=0.04){
+      pose(X,lz,0,ch,o); poseMatrix(o,m);
+      for(let k=0;k<5;k++){ const w=hd.half*(k/2-1); push(o.tilt, fl ? floatBarClear(m,hd.cx,w) : clearAt(m,hd.cx,CUT,w)); }
+    }
+  } else if(row.id==="cable"){
+    none = true;
+    const P = cablePath(TREE), total = P.acc[P.acc.length-1];
+    for(let s=0; s<=total; s+=0.04){ const [x,z]=pathAt(P,s); for(let k=0;k<5;k++) push(0, CABLE_Y-hgt(x, z+0.26*(k/2-1))); }
+  } else if(row.id==="tether"){
+    for(let th=0; TETH.L0-TETH.RS*th > TETH.LMIN; th += 0.04/(TETH.L0-TETH.RS*th)){
+      tetherPose(th,o); poseMatrix(o,m);
+      for(let k=0;k<5;k++) push(o.tilt, clearAt(m,0.05,CUT,TETH.CUTR*(k/2-1)));
+    }
+  } else {
+    const S = {x:-2.8, z:1.4, a:-0.4, R:rng(5)};
+    for(let t=0;t<120;t+=0.073){
+      resWalk(S,0.073); pose(S.x,S.z,-S.a,RES.ch,o); poseMatrix(o,m);
+      for(let k=0;k<5;k++) push(o.tilt, clearAt(m,0,RES.H,RES.CUTR*(k/2-1)));
+    }
+  }
+  cl.sort((a,b)=>a-b);
+  const q = p => cl[Math.min(cl.length-1, Math.floor(p*cl.length))];
+  let neg = 0; while(neg<cl.length && cl[neg]<0) neg++;
+  return {tilt:tmax*180/Math.PI, spread:q(0.9)-q(0.1), scalp:neg/cl.length*100, none};
+}
+const $ = id => document.getElementById(id);
+function renderCalc(){
+  const res = ROWS.map(stats);
+  const maxS = Math.max(0.001, ...res.map(r=>r.spread));
+  const tb = $("calc").tBodies[0];
+  tb.innerHTML = "";
+  ROWS.forEach((row,k)=>{
+    const r = res[k], tr = document.createElement("tr");
+    tr.tabIndex = 0; tr.dataset.k = k;
+    tr.innerHTML = `<td>${row.nm}</td>
+      <td>${r.none ? '<span class="na">—</span>' : r.tilt.toFixed(1)+"°"}</td>
+      <td>${(r.spread*100).toFixed(1)} cm<span class="bar" style="width:${Math.max(4, r.spread/maxS*100).toFixed(0)}%"></span></td>
+      <td>${r.scalp.toFixed(1)}%</td>`;
+    const go = ()=>{ if("wheels" in row) OPT.wheels = row.wheels; if("float" in row) OPT.float = row.float; syncSeg(); select(row.id); };
+    tr.addEventListener("click", go);
+    tr.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+    tb.appendChild(tr);
+  });
+  $("calc_note").textContent =
+    `요철 ±${Math.round(T.A*100)} cm [추정] 위에서 계산. 날 높이 흔들림 = 날–땅 간격의 10~90% 폭 — 그루터기가 얼마나 들쭉날쭉한지. ` +
+    `흙 친 비율 = 날이 땅보다 낮았던 비율 (평지 날 높이 5 cm, 상주형만 3.5 cm). 정지 자세의 기하라 속도로 튀는 것은 빠져 있고, 그건 MuJoCo 의 몫입니다.`;
+  markCalc();
+}
+function markCalc(){
+  const tb = $("calc").tBodies[0]; if(!tb) return;
+  [...tb.rows].forEach(tr=>{
+    const row = ROWS[+tr.dataset.k];
+    let on = row.id===curId;
+    if(on && "wheels" in row) on = row.wheels===OPT.wheels;
+    if(on && "float" in row) on = row.float===OPT.float;
+    tr.classList.toggle("on", on);
+  });
+}
+
+// ───────── 이름표 ─────────
+const tagsEl = $("tags");
+let tagEls = [];
+function buildTags(){
+  tagsEl.innerHTML = ""; tagEls = [];
+  for(const t of cur.tags){
+    const d = document.createElement("div");
+    d.className = "tag" + (t.warn ? " warn" : "");
+    d.textContent = t.t; tagsEl.appendChild(d); tagEls.push(d);
+  }
+}
+const _v = new THREE.Vector3();
+function placeTags(w,h){
+  cur.tags.forEach((t,j)=>{
+    const d = tagEls[j]; if(!d) return;
+    if(t.on && !t.on()){ d.hidden = true; return; }
+    _v.copy(t.p()).project(camera);
+    if(_v.z > 1 || Math.abs(_v.x) > 1.05 || Math.abs(_v.y) > 1.05){ d.hidden = true; return; }
+    d.hidden = false;
+    d.style.left = ((_v.x+1)/2*w) + "px";
+    d.style.top  = ((1-_v.y)/2*h - 6) + "px";
+  });
+}
+
+// ───────── 계기판 그리기 ─────────
+const spark = $("spark"), sctx = spark.getContext("2d");
+function sizeSpark(){
+  const r = spark.getBoundingClientRect(), d = Math.min(devicePixelRatio,2);
+  spark.width = Math.max(1, r.width*d|0); spark.height = Math.max(1, r.height*d|0);
+}
+function drawMeter(){
+  const deg = a => (a*180/Math.PI).toFixed(1)+"°";
+  $("m_pitch").textContent = M.none ? "—" : deg(M.pitch);
+  $("m_roll").textContent  = M.none ? "—" : deg(M.roll);
+  const mc = $("m_clear");
+  mc.textContent = (M.clear*100).toFixed(1)+" cm";
+  mc.classList.toggle("bad", M.clear < 0);
+  const cs = getComputedStyle(document.documentElement);
+  const ink = cs.getPropertyValue("--inst").trim(), bad = cs.getPropertyValue("--bad").trim(),
+        mut = cs.getPropertyValue("--muted").trim(), line = cs.getPropertyValue("--line").trim();
+  const W = spark.width, H = spark.height, d = Math.min(devicePixelRatio,2);
+  sctx.clearRect(0,0,W,H);
+  const lo=-0.06, hi=0.16, y = v => (hi-Math.max(lo,Math.min(hi,v)))/(hi-lo)*H;
+  const pad = 22*d, x = k => pad + (W-pad-2*d)*k/159;
+  // 땅 (0) 기준선
+  sctx.strokeStyle = line; sctx.lineWidth = 1*d; sctx.setLineDash([3*d,3*d]);
+  sctx.beginPath(); sctx.moveTo(pad,y(0)); sctx.lineTo(W,y(0)); sctx.stroke(); sctx.setLineDash([]);
+  sctx.fillStyle = mut; sctx.font = `${10*d}px "IBM Plex Sans KR",system-ui,sans-serif`; sctx.textBaseline="middle";
+  sctx.fillText("땅", 2*d, y(0));
+  const s = M.series; if(s.length < 2) return;
+  const off = 160 - s.length;
+  // 땅보다 낮았던 구간
+  sctx.fillStyle = bad; sctx.globalAlpha = 0.35;
+  sctx.beginPath(); sctx.moveTo(x(off), y(0));
+  for(let k=0;k<s.length;k++) sctx.lineTo(x(off+k), y(Math.min(0,s[k])));
+  sctx.lineTo(x(off+s.length-1), y(0)); sctx.closePath(); sctx.fill(); sctx.globalAlpha = 1;
+  sctx.strokeStyle = ink; sctx.lineWidth = 2*d; sctx.lineJoin="round";
+  sctx.beginPath();
+  for(let k=0;k<s.length;k++){ const px=x(off+k), py=y(s[k]); k ? sctx.lineTo(px,py) : sctx.moveTo(px,py); }
+  sctx.stroke();
+}
+
+// ───────── 돌리기 ─────────
+let cur = null, curId = null, playing = true, last = 0, raf = 0, meterT = 0;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let W=1, Hh=1;
+function resize(){
+  const r = cv.parentElement.getBoundingClientRect();
+  W = Math.max(1, r.width|0); Hh = Math.max(1, r.height|0);
+  renderer.setSize(W,Hh,false);
+  camera.aspect = W/Hh; camera.updateProjectionMatrix();
+  sizeSpark(); drawMeter();
+  queue();
+}
+function advance(dt){
+  let rem = dt;
+  while(rem > 1e-6){ const h = Math.min(0.02, rem); cur.step(h); rem -= h; }
+}
+function render(now){
+  if(vegDirty) writeVeg();
+  placeCam(); renderer.render(scene, camera); placeTags(W,Hh);
+  if(!now || now-meterT > 120){ meterT = now||0; drawMeter(); }
+}
+function tick(now){
+  raf = 0;
+  const dt = last ? Math.min(0.05, (now-last)/1000) : 0; last = now;
+  if(playing) advance(dt);
+  render(now);
+  if(playing) raf = requestAnimationFrame(tick);
+}
+function queue(){ if(!raf) raf = requestAnimationFrame(tick); }
+
+function select(id){
+  curId = id; cur = ENGINES[id];
+  Object.assign(cam, {tx:0, ty:0.3, tz:0}, cur.cam);
+  cur.init();
+  advance(cur.rest);           // 첫 화면이 이야기의 한가운데가 되도록
+  buildTags();
+  document.querySelectorAll(".fm").forEach(b=>b.setAttribute("aria-pressed", b.dataset.id===id ? "true" : "false"));
+  renderPanel(FORMS.find(f=>f.id===id));
+  syncSeg(); markCalc();
+  try{ localStorage.setItem("scythe-forms-sel", id); }catch(e){}
+  last = 0; meterT = 0; queue();
+}
+
+// 카메라 조작 — 라이브러리 없이
+let drag=null;
+cv.addEventListener("pointerdown", e=>{ drag={x:e.clientX,y:e.clientY}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e=>{
+  if(!drag) return;
+  cam.az += (e.clientX-drag.x)*0.008;
+  cam.el = Math.max(0.05, Math.min(1.45, cam.el + (e.clientY-drag.y)*0.006));
+  drag={x:e.clientX,y:e.clientY}; queue();
+});
+["pointerup","pointercancel"].forEach(t=>cv.addEventListener(t, ()=>{drag=null;}));
+cv.addEventListener("wheel", e=>{
+  e.preventDefault();
+  cam.r = Math.max(2, Math.min(22, cam.r*(1+Math.sign(e.deltaY)*0.11)));
+  queue();
+}, {passive:false});
+
+// ───────── DOM ─────────
+const mx = $("mx");
+for(const f of FORMS){
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "fm"; b.dataset.id = f.id;
+  b.setAttribute("aria-pressed","false");
+  b.setAttribute("aria-label", f.nm + " — " + CRIT.map((c,k)=>c+" "+["불리","애매","유리"][f.s[k]]).join(", "));
+  b.innerHTML = `<span class="sw" style="background:${f.col}"></span>
+    <span class="tx"><span class="nm">${f.nm}</span><span class="ds">${f.kind}</span></span>
+    <span class="dots">${f.s.map(v=>`<i class="d d${v}"></i>`).join("")}</span>`;
+  b.addEventListener("click", ()=>select(f.id));
+  mx.appendChild(b);
+}
+
+function renderPanel(f){
+  $("panel").innerHTML = `
+    <div>
+      <div class="kind">${f.kind}</div>
+      <h2>${f.nm}</h2>
+      <p class="lead">${f.one}</p>
+    </div>
+    <div class="sec"><div class="lbl">어떻게 베나</div><p>${f.how}</p></div>
+    ${f.quote ? `<p class="quote">${f.quote}</p>` : ""}
+    <div class="sec"><div class="lbl">이 땅에서</div>
+      <ul class="pm">${f.plus.map(t=>`<li class="p">${t}</li>`).join("")}${f.minus.map(t=>`<li class="m">${t}</li>`).join("")}</ul>
+    </div>
+    <div class="sec"><div class="lbl">여섯 기준 — 이유 (Claude 의견)</div>
+      <div class="why">${CRIT.map((c,k)=>`<div><span class="k">${c}</span><i class="d d${f.s[k]}"></i><span class="r">${f.why[k]}</span></div>`).join("")}</div>
+    </div>
+    <div class="sec"><div class="lbl">임베디드로 보면</div><p>${f.emb}</p></div>
+    <div class="sec"><div class="lbl">비슷한 실물</div><p>${f.real}</p></div>`;
+}
+
+function syncSeg(){
+  $("drv_track").setAttribute("aria-pressed", String(!OPT.wheels));
+  $("drv_wheel").setAttribute("aria-pressed", String(OPT.wheels));
+  $("flt_rigid").setAttribute("aria-pressed", String(!OPT.float));
+  $("flt_float").setAttribute("aria-pressed", String(OPT.float));
+  const drive = !!(cur && cur.drive), bar = curId==="bar";
+  $("drv_track").disabled = $("drv_wheel").disabled = !drive;
+  $("flt_rigid").disabled = $("flt_float").disabled = !bar;
+}
+function setOpt(k,v){ if(OPT[k]===v) return; OPT[k]=v; select(curId); }
+$("drv_track").addEventListener("click", ()=>setOpt("wheels",false));
+$("drv_wheel").addEventListener("click", ()=>setOpt("wheels",true));
+$("flt_rigid").addEventListener("click", ()=>setOpt("float",false));
+$("flt_float").addEventListener("click", ()=>setOpt("float",true));
+
+const rough = $("rough");
+rough.addEventListener("input", ()=>{ $("rough_o").textContent = "±"+rough.value+" cm"; });
+rough.addEventListener("change", ()=>{
+  T.A = (+rough.value)/100; shapeGround(); renderCalc(); select(curId);
+});
+
+$("b_play").addEventListener("click", ()=>{
+  playing = !playing;
+  $("b_play").textContent = playing ? "일시정지" : "재생";
+  last = 0; queue();
+});
+$("b_restart").addEventListener("click", ()=>{
+  Object.assign(cam, {tx:0, ty:0.3, tz:0}, cur.cam);
+  cur.init(); buildTags(); last = 0; queue();
+});
+
+if(reduce){ playing = false; $("b_play").textContent = "재생"; }
+shapeGround();
+let first = "bar";
+try{ const s = localStorage.getItem("scythe-forms-sel"); if(s && ENGINES[s]) first = s; }catch(e){}
+curId = first; cur = ENGINES[first];
+renderCalc();
+select(first);
+new ResizeObserver(resize).observe(cv.parentElement);
+resize();
+})();
+</script>
